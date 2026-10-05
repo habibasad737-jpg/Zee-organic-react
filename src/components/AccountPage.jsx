@@ -1,18 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { sendPasswordResetEmail, signOut, updateProfile } from "firebase/auth";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { auth, db } from "../firebase.js";
 import {
   loadDeliveryInfo,
   makeDeliveryInfo,
   saveDeliveryInfo as saveAccountDeliveryInfo,
 } from "../accountProfile.js";
-import { money } from "../config.js";
+import { money, brand } from "../config.js";
 import { useAuth } from "../context/auth.jsx";
 import { useWishlist } from "../context/wishlist.jsx";
 import { P } from "../data.js";
@@ -30,21 +25,16 @@ const sections = [
 
 const formatOrderDate = (createdAt) => {
   const date = createdAt?.toDate?.();
-  return date && !Number.isNaN(date.getTime())
-    ? new Intl.DateTimeFormat(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(date)
+  return date &&!Number.isNaN(date.getTime())
+   ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date)
     : "Date unavailable";
 };
 
 export default function AccountPage() {
   const { user, loading } = useAuth();
   const { ids: wishlistIds, error: wishlistError, ready } = useWishlist();
-  const [section, setSection] = useState("profile");
-  const [signInOpen, setSignInOpen] = useState(
-    new URLSearchParams(window.location.search).get("signin") === "1",
-  );
+  const [section, setSection] = useState("orders");
+  const [signInOpen, setSignInOpen] = useState(new URLSearchParams(window.location.search).get("signin") === "1");
   const [displayName, setDisplayName] = useState("");
   const [deliveryInfo, setDeliveryInfo] = useState(null);
   const [savedDeliveryInfo, setSavedDeliveryInfo] = useState(null);
@@ -57,812 +47,188 @@ export default function AccountPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const closeSignIn = useCallback(() => setSignInOpen(false), []);
 
-  useEffect(() => {
-    if (!showSavedPopup) return undefined;
+  const printInvoice = () => window.print();
 
-    const closeOnEscape = (event) => {
-      if (event.key === "Escape") setShowSavedPopup(false);
-    };
+  useEffect(() => {
+    if (!showSavedPopup) return;
+    const closeOnEscape = (e) => { if (e.key === "Escape") setShowSavedPopup(false); };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [showSavedPopup]);
 
   useEffect(() => {
-    if (!user) {
-      setDeliveryReady(false);
-      setDeliveryInfo(null);
-      setSavedDeliveryInfo(null);
-      return undefined;
-    }
-
+    if (!user) { setDeliveryReady(false); setDeliveryInfo(null); setSavedDeliveryInfo(null); return; }
     let active = true;
-    setDeliveryReady(false);
-    setEditingProfile(false);
-    setDisplayName(user.displayName || "");
-    setError("");
-
+    setDeliveryReady(false); setEditingProfile(false);
+    setDisplayName(user.displayName || ""); setError("");
     const loadProfile = async () => {
       try {
-        const { deliveryInfo: savedInfo, syncWarning } =
-          await loadDeliveryInfo(user);
+        const { deliveryInfo: savedInfo, syncWarning } = await loadDeliveryInfo(user);
         if (!active) return;
-        setDeliveryInfo(savedInfo);
-        setSavedDeliveryInfo(savedInfo);
-        setError(syncWarning);
-      } catch (loadError) {
-        console.error("Unable to load the customer profile.", loadError);
-        if (active) {
-          const emptyInfo = makeDeliveryInfo(user);
-          setDeliveryInfo(emptyInfo);
-          setSavedDeliveryInfo(emptyInfo);
-          setError(
-            "Could not load your saved account details. Please try again.",
-          );
-        }
-      } finally {
-        if (active) setDeliveryReady(true);
-      }
+        setDeliveryInfo(savedInfo); setSavedDeliveryInfo(savedInfo); setError(syncWarning);
+      } catch (e) {
+        const emptyInfo = makeDeliveryInfo(user);
+        setDeliveryInfo(emptyInfo); setSavedDeliveryInfo(emptyInfo);
+        setError("Could not load your saved account details.");
+      } finally { if (active) setDeliveryReady(true); }
     };
-
     loadProfile();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [user]);
 
   useEffect(() => {
-    if (!user || section !== "orders") return undefined;
-
+    if (!user || section!== "orders") return;
     let active = true;
     const loadOrders = async () => {
-      setOrdersLoading(true);
-      setOrdersError("");
+      setOrdersLoading(true); setOrdersError("");
       try {
-        const ordersQuery = query(
-          collection(db, "orders"),
-          where("userId", "==", user.uid),
-        );
-        const snapshot = await getDocs(ordersQuery);
+        const q = query(collection(db, "orders"), where("userId", "==", user.uid));
+        const snap = await getDocs(q);
         if (!active) return;
-
-        const customerOrders = snapshot.docs.map((orderDoc) => ({
-          id: orderDoc.id,
-          ...orderDoc.data(),
-        }));
-        customerOrders.sort((a, b) => {
-          const aTime = a.createdAt?.toMillis?.() ?? 0;
-          const bTime = b.createdAt?.toMillis?.() ?? 0;
-          return bTime - aTime;
-        });
-        setOrders(customerOrders);
-      } catch (loadError) {
-        console.error("Unable to load customer orders.", loadError);
-        if (active) {
-          setOrdersError(
-            "We couldn't load your orders. Please try again in a moment.",
-          );
-        }
-      } finally {
-        if (active) setOrdersLoading(false);
-      }
+        const list = snap.docs.map(d => ({ id: d.id,...d.data() }));
+        list.sort((a,b) => (b.createdAt?.toMillis?.()??0) - (a.createdAt?.toMillis?.()??0));
+        setOrders(list);
+      } catch (e) { if (active) setOrdersError("We couldn't load your orders."); }
+      finally { if (active) setOrdersLoading(false); }
     };
-
     loadOrders();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [section, user]);
 
-  const saveDeliveryInfo = async (event) => {
-    event.preventDefault();
-    setMessage("");
-    setError("");
-    const nextDeliveryInfo = {
-      ...deliveryInfo,
-      fullName: deliveryInfo.fullName.trim(),
-      phone: deliveryInfo.phone.trim(),
-      building: deliveryInfo.building.trim(),
-      area: deliveryInfo.area.trim(),
-      locality: deliveryInfo.locality.trim(),
-      address: deliveryInfo.address.trim(),
-    };
-    if (!nextDeliveryInfo.province || !nextDeliveryInfo.city) {
-      setError("Choose a province and city before saving your address.");
-      return;
-    }
-
+  const saveDeliveryInfo = async (e) => {
+    e.preventDefault(); setMessage(""); setError("");
+    const next = {...deliveryInfo, fullName: deliveryInfo.fullName.trim(), phone: deliveryInfo.phone.trim(), building: deliveryInfo.building.trim(), area: deliveryInfo.area.trim(), locality: deliveryInfo.locality.trim(), address: deliveryInfo.address.trim() };
+    if (!next.province ||!next.city) { setError("Choose province and city"); return; }
     setBusy(true);
     try {
-      await saveAccountDeliveryInfo(user, nextDeliveryInfo);
-      if (nextDeliveryInfo.fullName !== (user.displayName || "")) {
-        await updateProfile(user, { displayName: nextDeliveryInfo.fullName });
-      }
-      setDisplayName(nextDeliveryInfo.fullName);
-      setDeliveryInfo(nextDeliveryInfo);
-      setSavedDeliveryInfo(nextDeliveryInfo);
-      setEditingProfile(false);
-      setShowSavedPopup(true);
-    } catch (saveError) {
-      console.error("Unable to save the customer profile.", saveError);
-      setError(
-        saveError.message || "Could not save your account details.",
-      );
-    } finally {
-      setBusy(false);
-    }
+      await saveAccountDeliveryInfo(user, next);
+      if (next.fullName!== (user.displayName || "")) await updateProfile(user, { displayName: next.fullName });
+      setDisplayName(next.fullName); setDeliveryInfo(next); setSavedDeliveryInfo(next); setEditingProfile(false); setShowSavedPopup(true);
+    } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
 
   const sendPasswordReset = async () => {
-    if (!user.email) {
-      setError(
-        "This account does not have an email address for password reset.",
-      );
-      setMessage("");
-      return;
-    }
-    setMessage("");
-    setError("");
-    setBusy(true);
-    try {
-      await sendPasswordResetEmail(auth, user.email);
-      setMessage(`Password reset instructions were sent to ${user.email}.`);
-    } catch (resetError) {
-      console.error("Unable to send the password reset email.", resetError);
-      setError(
-        resetError.message || "Could not send the password reset email.",
-      );
-    } finally {
-      setBusy(false);
-    }
+    if (!user.email) { setError("No email for reset"); return; }
+    setBusy(true); try { await sendPasswordResetEmail(auth, user.email); setMessage(`Reset sent to ${user.email}`); } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
+  const logOut = async () => { setBusy(true); try { await signOut(auth); setSection("profile"); } catch (e) { setError(e.message); } finally { setBusy(false); } };
 
-  const logOut = async () => {
-    setMessage("");
-    setError("");
-    setBusy(true);
-    try {
-      await signOut(auth);
-      setSection("profile");
-    } catch (signOutError) {
-      console.error("Unable to sign out.", signOutError);
-      setError(signOutError.message || "Could not sign out. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  if (loading) return <main className="wrap account-page">Loading...</main>;
+  if (!user) return <main className="wrap account-page"><section className="account-card"><h1>Sign in to view account</h1><button className="btn" onClick={() => setSignInOpen(true)}>Sign in / Sign up</button></section><SignInModal open={signInOpen} onClose={closeSignIn} onSuccess={closeSignIn} /></main>;
 
-  if (loading) {
-    return (
-      <main className="wrap account-page" aria-live="polite">
-        Loading your account...
-      </main>
-    );
-  }
-
-  if (!user) {
-    return (
-      <main className="wrap account-page">
-        <section className="account-card">
-          <p className="product-category">Your Zee Organic account</p>
-          <h1>Sign in to view your account</h1>
-          <p>
-            Sign in or create an account to manage your profile and wishlist.
-          </p>
-          <button
-            className="btn"
-            type="button"
-            onClick={() => setSignInOpen(true)}
-          >
-            Sign in / Sign up
-          </button>
-        </section>
-        <SignInModal
-          open={signInOpen}
-          onClose={closeSignIn}
-          onSuccess={closeSignIn}
-        />
-      </main>
-    );
-  }
-
-  const savedProducts = P.filter((product) => wishlistIds.includes(product.id));
-  const hasDeliveryAddress = Boolean(
-    deliveryInfo?.province ||
-      deliveryInfo?.city ||
-      deliveryInfo?.building ||
-      deliveryInfo?.area ||
-      deliveryInfo?.locality ||
-      deliveryInfo?.address,
-  );
-  const cancelProfileEdit = () => {
-    setDeliveryInfo(savedDeliveryInfo);
-    setEditingProfile(false);
-    setError("");
-    setMessage("");
-  };
-  const cities = deliveryInfo?.province
-    ? pakistanLocations[deliveryInfo.province] || []
-    : [];
-  const updateDeliveryField = (field, value) => {
-    setDeliveryInfo((current) => ({
-      ...current,
-      [field]: value,
-      ...(field === "province" ? { city: "", area: "" } : {}),
-      ...(field === "city" ? { area: "" } : {}),
-    }));
-    setMessage("");
-    setError("");
-  };
+  const savedProducts = P.filter(p => wishlistIds.includes(p.id));
+  const hasDeliveryAddress = Boolean(deliveryInfo?.province || deliveryInfo?.city);
+  const cancelProfileEdit = () => { setDeliveryInfo(savedDeliveryInfo); setEditingProfile(false); };
+  const cities = deliveryInfo?.province? pakistanLocations[deliveryInfo.province] || [] : [];
+  const updateDeliveryField = (field, value) => { setDeliveryInfo(c => ({...c, [field]: value,...(field==="province"?{city:"",area:""}:{}),...(field==="city"?{area:""}:{}) })); };
 
   return (
     <main className="wrap account-dashboard">
-      <section className="account-welcome">
-        <div>
-          <p className="product-category">Your Zee Organic account</p>
-          <h1>Hello, {displayName || user.email || user.phoneNumber}</h1>
-          <p>
-            Manage your profile and keep track of your Zee Organic activity.
-          </p>
-        </div>
-        <button
-          className="btn account-signout"
-          type="button"
-          onClick={logOut}
-          disabled={busy}
-        >
-          Log out
-        </button>
-      </section>
+      <style>{`
+      .invoice-modal{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+      .invoice-paper{background:#fff;color:#111;max-width:700px;width:100%;padding:28px;border-radius:16px;max-height:90vh;overflow:auto}
+      .invoice-line{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ddd;font-size:14px}
+      .account-order{border:1px solid #333;padding:16px;border-radius:14px;margin-bottom:16px;background:#111}
+      .tracking-badge{background:#22c55e;color:#000;padding:5px 12px;border-radius:20px;font-weight:800;font-size:12px;display:inline-block;margin-top:6px}
+       @media print{.account-menu,.account-welcome{display:none!important}}
+      `}</style>
+
+      <section className="account-welcome"><div><p className="product-category">Your Zee Organic account</p><h1>Hello, {displayName || user.email}</h1></div><button className="btn account-signout" onClick={logOut}>Log out</button></section>
 
       <div className="account-layout">
-        <nav className="account-menu" aria-label="Account pages">
+        <nav className="account-menu">
           {sections.map(([id, label, icon]) => (
-            <button
-              key={id}
-              type="button"
-              className={section === id ? "active" : ""}
-              aria-current={section === id ? "page" : undefined}
-              onClick={() => {
-                setSection(id);
-                setMessage("");
-                setError("");
-              }}
-            >
-              <span aria-hidden="true">{icon}</span>
-              {label}
-            </button>
+            <button key={id} type="button" className={section===id?"active":""} onClick={()=>setSection(id)}><span>{icon}</span> {label}</button>
           ))}
-          <button
-            type="button"
-            className="account-menu-logout"
-            onClick={logOut}
-            disabled={busy}
-          >
-            <span aria-hidden="true">⇥</span>
-            Logout
-          </button>
+          <button type="button" className="account-menu-logout" onClick={logOut}>⇥ Logout</button>
         </nav>
 
-        <section className="account-content" aria-live="polite">
-          {section === "profile" && (
+        <section className="account-content">
+          {section==="profile" && (
             <>
-              <p className="product-category">Profile</p>
-              <div className="account-profile-heading">
-                <h2>Personal information</h2>
-                {deliveryReady && deliveryInfo && (
-                  <button
-                    className="account-edit-button"
-                    type="button"
-                    onClick={() => {
-                      if (editingProfile) cancelProfileEdit();
-                      else setEditingProfile(true);
-                    }}
-                    aria-label={
-                      editingProfile ? "Cancel editing details" : "Edit details"
-                    }
-                  >
-                    {editingProfile ? (
-                      "Cancel"
-                    ) : (
-                      <>
-                        <svg
-                          aria-hidden="true"
-                          viewBox="0 0 20 20"
-                          width="16"
-                          height="16"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.7"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="m12.8 3.2 4 4M3 17l3.7-.8L16.6 6.3a2.1 2.1 0 0 0-3-3L3.7 13.2 3 17Z" />
-                        </svg>
-                        Edit details
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-              <p className="account-section-lead">
-                Your contact details and delivery address, saved to your
-                account.
-              </p>
-              {!deliveryReady || !deliveryInfo ? (
-                <p aria-live="polite">Loading your account details...</p>
-              ) : editingProfile ? (
-                <form
-                  className="delivery-form"
-                  onSubmit={saveDeliveryInfo}
-                  autoComplete="on"
-                >
-                  <div className="delivery-fields">
-                    <div className="delivery-field">
-                      <label htmlFor="delivery-name">Full name</label>
-                      <input
-                        id="delivery-name"
-                        name="name"
-                        type="text"
-                        autoComplete="name"
-                        placeholder="Enter your first and last name"
-                        value={deliveryInfo.fullName}
-                        onChange={(event) =>
-                          updateDeliveryField("fullName", event.target.value)
-                        }
-                        maxLength={80}
-                        required
-                      />
-                    </div>
-                    <div className="delivery-field">
-                      <label htmlFor="delivery-province">
-                        Province / region
-                      </label>
-                      <select
-                        id="delivery-province"
-                        name="address-level1"
-                        autoComplete="address-level1"
-                        value={deliveryInfo.province}
-                        onChange={(event) =>
-                          updateDeliveryField("province", event.target.value)
-                        }
-                        required
-                      >
-                        <option value="">Please choose your province</option>
-                        {Object.keys(pakistanLocations).map((province) => (
-                          <option key={province} value={province}>
-                            {province}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="delivery-field">
-                      <label htmlFor="delivery-phone">Phone number</label>
-                      <input
-                        id="delivery-phone"
-                        name="tel"
-                        type="tel"
-                        autoComplete="tel"
-                        placeholder="e.g. +92 300 1234567"
-                        value={deliveryInfo.phone}
-                        onChange={(event) =>
-                          updateDeliveryField("phone", event.target.value)
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="delivery-field">
-                      <label htmlFor="delivery-city">City</label>
-                      <select
-                        id="delivery-city"
-                        name="address-level2"
-                        autoComplete="address-level2"
-                        value={deliveryInfo.city}
-                        onChange={(event) =>
-                          updateDeliveryField("city", event.target.value)
-                        }
-                        disabled={!deliveryInfo.province}
-                        required
-                      >
-                        <option value="">
-                          {deliveryInfo.province
-                            ? "Please choose your city"
-                            : "Choose a province first"}
-                        </option>
-                        {cities.map((city) => (
-                          <option key={city} value={city}>
-                            {city}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="delivery-field">
-                      <label htmlFor="delivery-building">
-                        Building / house / floor / street
-                      </label>
-                      <input
-                        id="delivery-building"
-                        name="address-line1"
-                        autoComplete="address-line1"
-                        placeholder="House, apartment, floor, street"
-                        value={deliveryInfo.building}
-                        onChange={(event) =>
-                          updateDeliveryField("building", event.target.value)
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="delivery-field">
-                      <label htmlFor="delivery-area">
-                        Area / neighbourhood
-                      </label>
-                      <input
-                        id="delivery-area"
-                        name="address-area"
-                        placeholder="Choose a city, then enter your area"
-                        value={deliveryInfo.area}
-                        onChange={(event) =>
-                          updateDeliveryField("area", event.target.value)
-                        }
-                        disabled={!deliveryInfo.city}
-                        required
-                      />
-                    </div>
-                    <div className="delivery-field">
-                      <label htmlFor="delivery-locality">
-                        Colony / suburb / landmark
-                      </label>
-                      <input
-                        id="delivery-locality"
-                        name="address-line2"
-                        autoComplete="address-line2"
-                        placeholder="Colony, suburb or nearby landmark"
-                        value={deliveryInfo.locality}
-                        onChange={(event) =>
-                          updateDeliveryField("locality", event.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="delivery-field">
-                      <label htmlFor="delivery-address">Address details</label>
-                      <input
-                        id="delivery-address"
-                        name="address-details"
-                        placeholder="Any extra directions for delivery"
-                        value={deliveryInfo.address}
-                        onChange={(event) =>
-                          updateDeliveryField("address", event.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="delivery-field">
-                      <label htmlFor="delivery-email">Email address</label>
-                      <input
-                        id="delivery-email"
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        value={user.email || ""}
-                        placeholder="No email is linked to this account"
-                        readOnly
-                      />
-                    </div>
-                    <fieldset className="delivery-label">
-                      <legend>Delivery label</legend>
-                      <label>
-                        <input
-                          type="radio"
-                          name="delivery-label"
-                          value="home"
-                          checked={deliveryInfo.label === "home"}
-                          onChange={() => updateDeliveryField("label", "home")}
-                        />
-                        <span aria-hidden="true">⌂</span>
-                        Home
-                      </label>
-                      <label>
-                        <input
-                          type="radio"
-                          name="delivery-label"
-                          value="office"
-                          checked={deliveryInfo.label === "office"}
-                          onChange={() =>
-                            updateDeliveryField("label", "office")
-                          }
-                        />
-                        <span aria-hidden="true">▣</span>
-                        Office
-                      </label>
-                    </fieldset>
-                  </div>
-                  <div className="delivery-form-footer">
-                    <p>
-                      These details are saved to your account and available
-                      when you sign in on another device.
-                    </p>
-                    <div className="account-actions">
-                      <button className="btn" type="submit" disabled={busy}>
-                        {busy ? "Saving..." : "Save details"}
-                      </button>
-                      <button
-                        className="btn account-signout"
-                        type="button"
-                        onClick={sendPasswordReset}
-                        disabled={busy || !user.email}
-                      >
-                        Reset password
-                      </button>
-                      <button
-                        className="btn account-signout"
-                        type="button"
-                        onClick={cancelProfileEdit}
-                        disabled={busy}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
+              <h2>Personal information</h2>
+              {!deliveryReady ||!deliveryInfo? <p>Loading...</p> : editingProfile? (
+                <form className="delivery-form" onSubmit={saveDeliveryInfo}>
+                  <input value={deliveryInfo.fullName} onChange={e=>updateDeliveryField("fullName", e.target.value)} placeholder="Full name" required />
+                  <select value={deliveryInfo.province} onChange={e=>updateDeliveryField("province", e.target.value)} required><option value="">Province</option>{Object.keys(pakistanLocations).map(p=><option key={p} value={p}>{p}</option>)}</select>
+                  <select value={deliveryInfo.city} onChange={e=>updateDeliveryField("city", e.target.value)} disabled={!deliveryInfo.province} required><option value="">City</option>{cities.map(c=><option key={c} value={c}>{c}</option>)}</select>
+                  <input value={deliveryInfo.phone} onChange={e=>updateDeliveryField("phone", e.target.value)} placeholder="Phone" required />
+                  <input value={deliveryInfo.building} onChange={e=>updateDeliveryField("building", e.target.value)} placeholder="House / Street" required />
+                  <input value={deliveryInfo.area} onChange={e=>updateDeliveryField("area", e.target.value)} placeholder="Area" required />
+                  <button className="btn" type="submit">{busy?"Saving...":"Save details"}</button>
+                  <button type="button" className="btn o" onClick={cancelProfileEdit}>Cancel</button>
                 </form>
               ) : (
-                <div className="account-profile-summary">
-                  <section className="account-profile-card">
-                    <h3>Contact details</h3>
-                    <dl>
-                      <div>
-                        <dt>Full name</dt>
-                        <dd>{deliveryInfo.fullName || "Not provided"}</dd>
-                      </div>
-                      <div>
-                        <dt>Email address</dt>
-                        <dd>{user.email || "No email linked to this account"}</dd>
-                      </div>
-                      <div>
-                        <dt>Phone number</dt>
-                        <dd>{deliveryInfo.phone || "Not provided"}</dd>
-                      </div>
-                    </dl>
-                  </section>
-                  <section className="account-profile-card">
-                    <h3>Delivery address</h3>
-                    {hasDeliveryAddress ? (
-                      <dl>
-                        <div>
-                          <dt>Delivery label</dt>
-                          <dd>
-                            {deliveryInfo.label === "office" ? "Office" : "Home"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>Province / region</dt>
-                          <dd>{deliveryInfo.province || "Not provided"}</dd>
-                        </div>
-                        <div>
-                          <dt>City</dt>
-                          <dd>{deliveryInfo.city || "Not provided"}</dd>
-                        </div>
-                        <div>
-                          <dt>Building / street</dt>
-                          <dd>{deliveryInfo.building || "Not provided"}</dd>
-                        </div>
-                        <div>
-                          <dt>Area / neighbourhood</dt>
-                          <dd>{deliveryInfo.area || "Not provided"}</dd>
-                        </div>
-                        {deliveryInfo.locality && (
-                          <div>
-                            <dt>Colony / landmark</dt>
-                            <dd>{deliveryInfo.locality}</dd>
-                          </div>
-                        )}
-                        {deliveryInfo.address && (
-                          <div>
-                            <dt>Address details</dt>
-                            <dd>{deliveryInfo.address}</dd>
-                          </div>
-                        )}
-                      </dl>
-                    ) : (
-                      <p className="account-profile-empty">
-                        No delivery address saved yet. Choose Edit details to
-                        add one.
-                      </p>
-                    )}
-                  </section>
-                  <div className="account-profile-footer">
-                    <p>
-                      Your email address is managed by your sign-in method.
-                    </p>
-                    <button
-                      className="btn account-signout"
-                      type="button"
-                      onClick={sendPasswordReset}
-                      disabled={busy || !user.email}
-                    >
-                      Reset password
-                    </button>
-                  </div>
-                </div>
+                <div><p><b>{deliveryInfo.fullName}</b> - {deliveryInfo.phone}</p><p>{[deliveryInfo.building, deliveryInfo.area, deliveryInfo.city, deliveryInfo.province].filter(Boolean).join(", ")}</p><button className="btn" onClick={()=>setEditingProfile(true)}>Edit details</button></div>
               )}
             </>
           )}
 
-          {section === "orders" && (
+          {section==="orders" && (
             <>
-              <p className="product-category">Purchases</p>
-              <h2>My Orders</h2>
-              {ordersLoading ? (
-                <p aria-live="polite">Loading your orders...</p>
-              ) : ordersError ? (
-                <p className="account-error" role="alert">
-                  {ordersError}
-                </p>
-              ) : orders.length ? (
-                <div className="account-orders">
-                  {orders.map((order) => (
+              <p className="product-category">Purchases & Invoices</p><h2>My Orders - Invoice</h2>
+              {ordersLoading? <p>Loading orders...</p> : orders.length? (
+                <div>
+                  {orders.map(order=>(
                     <article className="account-order" key={order.id}>
-                      <header className="account-order-header">
+                      <div style={{display:'flex', justifyContent:'space-between'}}>
                         <div>
-                          <h3>Order {order.id.slice(0, 8).toUpperCase()}</h3>
-                          <p>{formatOrderDate(order.createdAt)}</p>
+                          <h3 style={{color:'#a3e635'}}>Order #{order.id.slice(0,8).toUpperCase()}</h3>
+                          <p style={{fontSize:13}}>{formatOrderDate(order.createdAt)} • {order.count} items</p>
+                          {order.instaTracking? <span className="tracking-badge">📦 Tracking: {order.instaTracking}</span> : <span style={{fontSize:12,opacity:0.7}}>⏳ Pending courier</span>}
                         </div>
-                        <span className="account-order-status">
-                          {order.status || "pending"}
-                        </span>
-                      </header>
-                      <ul className="account-order-items">
-                        {(order.items || []).map((item, index) => (
-                          <li key={`${item.id || item.name}-${index}`}>
-                            <span>
-                              {item.name} <b>× {item.qty}</b>
-                            </span>
-                            <span>{money(item.price * item.qty)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      {order.address && (
-                        <p className="account-order-address">
-                          Delivery to:{" "}
-                          {[
-                            order.address.fullName,
-                            order.address.building,
-                            order.address.area,
-                            order.address.locality,
-                            order.address.city,
-                            order.address.province,
-                          ]
-                            .filter(Boolean)
-                            .join(", ")}
-                        </p>
-                      )}
-                      <div className="account-order-total">
-                        <span>Order total</span>
-                        <b>{money(order.total || 0)}</b>
+                        <span style={{background:'#facc15',color:'#000',padding:'4px 10px',borderRadius:20,height:'fit-content',fontSize:12,fontWeight:700}}>{order.status||"pending"}</span>
+                      </div>
+                      <ul style={{marginTop:12}}>{(order.items||[]).map((it,i)=><li key={i} className="invoice-line"><span>{it.name} × {it.qty}</span><span>{money(it.price*it.qty)}</span></li>)}</ul>
+                      <div className="invoice-line"><span>Subtotal</span><span>{money(order.subtotal||0)}</span></div>
+                      <div className="invoice-line"><span>Shipping</span><span>{money(order.shipping||0)}</span></div>
+                      <div className="invoice-line" style={{fontWeight:800,fontSize:16}}><span>Order total</span><span>{money(order.total||0)}</span></div>
+                      <p style={{fontSize:12,opacity:0.8,marginTop:8}}>📍 {order.address? [order.address.fullName, order.address.building, order.address.area, order.address.city].filter(Boolean).join(", "):""}</p>
+                      <div style={{display:'flex',gap:8,marginTop:12}}>
+                        <button className="btn" onClick={()=>setSelectedInvoice(order)}>🧾 View / Print Invoice</button>
+                        <button className="btn o" onClick={()=>window.open(`https://one.instaworld.pk/`, '_blank')}>Track on Insta World</button>
                       </div>
                     </article>
                   ))}
                 </div>
-              ) : (
-                <div className="account-empty">
-                  <span aria-hidden="true">▱</span>
-                  <h3>No orders to show yet</h3>
-                  <p>Your purchases will appear here after you place an order.</p>
-                  <a className="btn" href="/shop">
-                    Browse products
-                  </a>
-                </div>
-              )}
+              ) : <div><h3>No orders yet</h3><a className="btn" href="/shop">Browse products</a></div>}
             </>
           )}
 
-          {section === "wishlist" && (
-            <>
-              <p className="product-category">Saved items</p>
-              <h2>My Wishlist</h2>
-              <p className="account-section-lead">
-                Saved items are stored in this browser for your signed-in
-                account. Store following is not available because this site
-                currently has one store.
-              </p>
-              {wishlistError && (
-                <p className="account-error" role="alert">
-                  {wishlistError}
-                </p>
-              )}
-              {!ready ? (
-                <p aria-live="polite">Loading your saved items...</p>
-              ) : savedProducts.length ? (
-                <div className="grid account-wishlist-grid">
-                  {savedProducts.map((product) => (
-                    <ProductCard key={product.id} p={product} />
-                  ))}
-                </div>
-              ) : (
-                <div className="account-empty">
-                  <span aria-hidden="true">♡</span>
-                  <h3>Your wishlist is empty</h3>
-                  <p>Use the heart on a product to save it here for later.</p>
-                  <a className="btn" href="/shop">
-                    Explore the shop
-                  </a>
-                </div>
-              )}
-            </>
-          )}
-
-          {section === "reviews" && (
-            <>
-              <p className="product-category">Your feedback</p>
-              <h2>My Reviews</h2>
-              <div className="account-empty">
-                <span aria-hidden="true">☆</span>
-                <h3>No reviews submitted</h3>
-                <p>
-                  Product ratings currently shown on the shop are demo data.
-                  Customer review submission and account-linked review storage
-                  are not connected yet.
-                </p>
-              </div>
-            </>
-          )}
-
-          {section === "returns" && (
-            <>
-              <p className="product-category">Order support</p>
-              <h2>My Returns &amp; Cancellations</h2>
-              <div className="account-empty">
-                <span aria-hidden="true">×</span>
-                <h3>No return requests</h3>
-                <p>
-                  Returns and cancellations need saved order records. Because
-                  checkout is currently a demo and does not create orders, there
-                  are no requests to display or manage.
-                </p>
-                <a className="btn" href="/shop">
-                  Continue shopping
-                </a>
-              </div>
-            </>
-          )}
-
-          {message && (
-            <p className="account-success" role="status">
-              {message}
-            </p>
-          )}
-          {error && (
-            <p className="account-error" role="alert">
-              {error}
-            </p>
-          )}
+          {section==="wishlist" && <><h2>My Wishlist</h2>{!ready? <p>Loading...</p> : savedProducts.length? <div className="grid">{savedProducts.map(p=><ProductCard key={p.id} p={p} />)}</div> : <p>Empty</p>}</>}
+          {section==="reviews" && <><h2>My Reviews</h2><p>No reviews yet</p></>}
+          {section==="returns" && <><h2>Returns</h2><p>No returns</p></>}
+          {message && <p style={{color:'lightgreen'}}>{message}</p>}
+          {error && <p style={{color:'salmon'}}>{error}</p>}
         </section>
       </div>
-      {showSavedPopup && (
-        <div
-          className="delivery-saved-overlay"
-          onClick={() => setShowSavedPopup(false)}
-        >
-          <section
-            className="delivery-saved-popup"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delivery-saved-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <span className="delivery-saved-icon" aria-hidden="true">
-              ✓
-            </span>
-            <h2 id="delivery-saved-title">Details saved</h2>
-            <p>Your delivery details have been saved successfully.</p>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => setShowSavedPopup(false)}
-              autoFocus
-            >
-              Okay
-            </button>
-          </section>
+
+      {selectedInvoice && (
+        <div className="invoice-modal" onClick={()=>setSelectedInvoice(null)}>
+          <div className="invoice-paper" onClick={e=>e.stopPropagation()}>
+            <div style={{textAlign:'center', borderBottom:'2px solid #111', paddingBottom:12, marginBottom:12}}>
+              <h2 style={{margin:0}}>{brand.name}</h2><p style={{margin:0}}>{brand.tagline}</p><small>INVOICE</small>
+            </div>
+            <div className="invoice-line"><span>Invoice No</span><b>#{selectedInvoice.id.slice(0,8).toUpperCase()}</b></div>
+            <div className="invoice-line"><span>Date</span><span>{formatOrderDate(selectedInvoice.createdAt)}</span></div>
+            <div className="invoice-line"><span>Customer</span><span>{selectedInvoice.customerName||selectedInvoice.address?.fullName}</span></div>
+            <div className="invoice-line"><span>Phone</span><span>{selectedInvoice.phone}</span></div>
+            <div className="invoice-line"><span>Address</span><span style={{maxWidth:'55%',textAlign:'right'}}>{[selectedInvoice.address?.building, selectedInvoice.address?.area, selectedInvoice.address?.city, selectedInvoice.address?.province].filter(Boolean).join(", ")}</span></div>
+            {selectedInvoice.instaTracking && <div className="invoice-line"><span>Tracking</span><b>{selectedInvoice.instaTracking}</b></div>}
+            <h3 style={{margin:'14px 0 6px'}}>Items</h3>
+            {(selectedInvoice.items||[]).map((it,i)=><div key={i} className="invoice-line"><span>{it.name} × {it.qty}</span><span>{money(it.price*it.qty)}</span></div>)}
+            <div className="invoice-line"><span>Subtotal</span><span>{money(selectedInvoice.subtotal||0)}</span></div>
+            <div className="invoice-line"><span>Shipping</span><span>{money(selectedInvoice.shipping||0)}</span></div>
+            <div className="invoice-line" style={{fontWeight:900,fontSize:18,borderBottom:'2px solid #111'}}><span>Total COD</span><span>{money(selectedInvoice.total||0)}</span></div>
+            <p style={{fontSize:11,textAlign:'center',marginTop:12,opacity:0.6}}>Thank you for shopping at Zee Organic Store! Courier: Insta World<br/>Computer generated invoice</p>
+            <div style={{display:'flex',gap:8,justifyContent:'center',marginTop:14}}>
+              <button className="btn" onClick={printInvoice}>🖨️ Print</button>
+              <button className="btn o" onClick={()=>setSelectedInvoice(null)}>Close</button>
+            </div>
+          </div>
         </div>
       )}
     </main>
