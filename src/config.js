@@ -18,8 +18,8 @@ export const money = (n) => brand.currency + n.toLocaleString();
 
 // --- INSTA WORLD COURIER CONFIG ---
 export const instaWorld = {
-  apiKey: import.meta.env.VITE_INSTA_WORLD_API_KEY,
-  // We will confirm exact URL from Aisha, for now using common pattern
-  apiUrl: "https://one.instaworld.pk/api/v1/shipments",
+  apiKey: import.meta.env.VITE_INSTA_WORLD_API_KEY || import.meta.env.VITE_INSTA_API_KEY,
+  // We now use our own proxy to fix CORS
+  apiUrl: "/api/create-shipment",
   merchantName: "RH products"
 };

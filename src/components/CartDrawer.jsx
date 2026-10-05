@@ -13,47 +13,37 @@ import { pakistanLocations } from "../data/pakistanLocations.js";
 
 // --- INSTA WORLD FUNCTION ---
 async function createInstaWorldParcel(orderData) {
-  if (!instaWorld.apiKey) {
-    console.warn("Insta World API Key missing!");
-    return null;
-  }
-
-  // Build address string
-  const fullAddress = `${orderData.address.building}, ${orderData.address.area}, ${orderData.address.locality ? orderData.address.locality + ', ' : ''}${orderData.address.address ? orderData.address.address + ', ' : ''}${orderData.address.city}, ${orderData.address.province}`;
-
-  const payload = {
-    customer_name: orderData.customerName,
-    customer_phone: orderData.phone,
-    customer_address: fullAddress,
-    customer_city: orderData.address.city,
-    customer_province: orderData.address.province,
-    cod_amount: orderData.total,
-    order_id: orderData.orderId || Date.now().toString(),
-    product_details: orderData.items.map(i => `${i.name} x ${i.qty}`).join(", "),
-    weight: "1",
-    pieces: orderData.count.toString(),
-    // Add more fields as per Aisha's docs
-  };
-
   try {
-    // OPTION 1: Direct call (works with your VITE key)
-    const res = await fetch(instaWorld.apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": `Bearer ${instaWorld.apiKey}`,
-        // Some APIs use X-API-KEY, if above fails, try this:
-        // "X-API-KEY": instaWorld.apiKey,
-      },
+    const payload = {
+      customer_name: orderData.customerName || orderData.name,
+      customer_phone: orderData.phone,
+      customer_address: `${orderData.address?.building || ''}, ${orderData.address?.area || ''}, ${orderData.address?.city || ''}`,
+      customer_city: orderData.address?.city,
+      customer_province: orderData.address?.province,
+      cod_amount: orderData.total,
+      order_id: orderData.orderId || Date.now().toString(),
+      pieces: orderData.count?.toString() || "1",
+    };
+
+    console.log("Sending via proxy:", payload);
+
+    const res = await fetch('/api/create-shipment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
 
     const result = await res.json();
-    console.log("✅ Insta World Response:", result);
+    console.log("Insta World Response:", result);
+    
+    if (!res.ok) {
+      console.error("Insta failed:", result);
+      return null;
+    }
     return result;
+
   } catch (err) {
-    console.error("❌ Insta World Error:", err);
+    console.log("Insta World Error:", err);
     return null;
   }
 }
