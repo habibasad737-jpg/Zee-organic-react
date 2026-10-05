@@ -5,12 +5,21 @@ export const brand = {
   currency: "PKR ",
   shippingFee: 79,
   disclaimer:
-    "Product information is provided for general informational purposes and is not intended as medical advice. Reviews and ratings shown are demo placeholder data.",
+    "Product information is provided for general informational purposes and is not intended as medical advice.",
   contact: [
     "Address placeholder",
     "+00 000 000 0000",
     "hello@example.com",
-    "Mon–Sat, 9:00–19:00",
+    "Mon-Sat, 9:00-19:00",
   ],
 };
+
 export const money = (n) => brand.currency + n.toLocaleString();
+
+// --- INSTA WORLD COURIER CONFIG ---
+export const instaWorld = {
+  apiKey: import.meta.env.VITE_INSTA_WORLD_API_KEY,
+  // We will confirm exact URL from Aisha, for now using common pattern
+  apiUrl: "https://one.instaworld.pk/api/v1/shipments",
+  merchantName: "RH products"
+};

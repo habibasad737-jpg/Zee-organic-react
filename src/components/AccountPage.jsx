@@ -7,6 +7,11 @@ import {
   where,
 } from "firebase/firestore";
 import { auth, db } from "../firebase.js";
+import {
+  loadDeliveryInfo,
+  makeDeliveryInfo,
+  saveDeliveryInfo as saveAccountDeliveryInfo,
+} from "../accountProfile.js";
 import { money } from "../config.js";
 import { useAuth } from "../context/auth.jsx";
 import { useWishlist } from "../context/wishlist.jsx";
@@ -23,8 +28,6 @@ const sections = [
   ["returns", "My Returns & Cancellations", "×"],
 ];
 
-const deliveryStorageKey = (uid) => `zee-delivery:${uid}`;
-
 const formatOrderDate = (createdAt) => {
   const date = createdAt?.toDate?.();
   return date && !Number.isNaN(date.getTime())
@@ -35,18 +38,6 @@ const formatOrderDate = (createdAt) => {
     : "Date unavailable";
 };
 
-const makeDeliveryInfo = (user) => ({
-  fullName: user.displayName || "",
-  phone: user.phoneNumber || "",
-  province: "",
-  city: "",
-  building: "",
-  area: "",
-  locality: "",
-  address: "",
-  label: "home",
-});
-
 export default function AccountPage() {
   const { user, loading } = useAuth();
   const { ids: wishlistIds, error: wishlistError, ready } = useWishlist();
@@ -56,7 +47,9 @@ export default function AccountPage() {
   );
   const [displayName, setDisplayName] = useState("");
   const [deliveryInfo, setDeliveryInfo] = useState(null);
+  const [savedDeliveryInfo, setSavedDeliveryInfo] = useState(null);
   const [deliveryReady, setDeliveryReady] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -77,24 +70,46 @@ export default function AccountPage() {
   }, [showSavedPopup]);
 
   useEffect(() => {
-    if (!user) return;
-
-    setDisplayName(user.displayName || "");
-    try {
-      const saved = localStorage.getItem(deliveryStorageKey(user.uid));
-      setDeliveryInfo(
-        saved
-          ? { ...makeDeliveryInfo(user), ...JSON.parse(saved) }
-          : makeDeliveryInfo(user),
-      );
-      setError("");
-    } catch (storageError) {
-      console.error("Unable to load saved delivery information.", storageError);
-      setDeliveryInfo(makeDeliveryInfo(user));
-      setError("Could not load saved delivery information from this browser.");
-    } finally {
-      setDeliveryReady(true);
+    if (!user) {
+      setDeliveryReady(false);
+      setDeliveryInfo(null);
+      setSavedDeliveryInfo(null);
+      return undefined;
     }
+
+    let active = true;
+    setDeliveryReady(false);
+    setEditingProfile(false);
+    setDisplayName(user.displayName || "");
+    setError("");
+
+    const loadProfile = async () => {
+      try {
+        const { deliveryInfo: savedInfo, syncWarning } =
+          await loadDeliveryInfo(user);
+        if (!active) return;
+        setDeliveryInfo(savedInfo);
+        setSavedDeliveryInfo(savedInfo);
+        setError(syncWarning);
+      } catch (loadError) {
+        console.error("Unable to load the customer profile.", loadError);
+        if (active) {
+          const emptyInfo = makeDeliveryInfo(user);
+          setDeliveryInfo(emptyInfo);
+          setSavedDeliveryInfo(emptyInfo);
+          setError(
+            "Could not load your saved account details. Please try again.",
+          );
+        }
+      } finally {
+        if (active) setDeliveryReady(true);
+      }
+    };
+
+    loadProfile();
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   useEffect(() => {
@@ -159,34 +174,20 @@ export default function AccountPage() {
     }
 
     setBusy(true);
-    const key = deliveryStorageKey(user.uid);
-    let previousValue = null;
-    let storageUpdated = false;
     try {
-      previousValue = localStorage.getItem(key);
-      localStorage.setItem(key, JSON.stringify(nextDeliveryInfo));
-      storageUpdated = true;
+      await saveAccountDeliveryInfo(user, nextDeliveryInfo);
       if (nextDeliveryInfo.fullName !== (user.displayName || "")) {
         await updateProfile(user, { displayName: nextDeliveryInfo.fullName });
       }
       setDisplayName(nextDeliveryInfo.fullName);
       setDeliveryInfo(nextDeliveryInfo);
+      setSavedDeliveryInfo(nextDeliveryInfo);
+      setEditingProfile(false);
       setShowSavedPopup(true);
     } catch (saveError) {
-      console.error("Unable to save the delivery information.", saveError);
-      if (storageUpdated) {
-        try {
-          if (previousValue === null) localStorage.removeItem(key);
-          else localStorage.setItem(key, previousValue);
-        } catch (rollbackError) {
-          console.error(
-            "Unable to restore the previous delivery information.",
-            rollbackError,
-          );
-        }
-      }
+      console.error("Unable to save the customer profile.", saveError);
       setError(
-        saveError.message || "Could not save your delivery information.",
+        saveError.message || "Could not save your account details.",
       );
     } finally {
       setBusy(false);
@@ -267,6 +268,20 @@ export default function AccountPage() {
   }
 
   const savedProducts = P.filter((product) => wishlistIds.includes(product.id));
+  const hasDeliveryAddress = Boolean(
+    deliveryInfo?.province ||
+      deliveryInfo?.city ||
+      deliveryInfo?.building ||
+      deliveryInfo?.area ||
+      deliveryInfo?.locality ||
+      deliveryInfo?.address,
+  );
+  const cancelProfileEdit = () => {
+    setDeliveryInfo(savedDeliveryInfo);
+    setEditingProfile(false);
+    setError("");
+    setMessage("");
+  };
   const cities = deliveryInfo?.province
     ? pakistanLocations[deliveryInfo.province] || []
     : [];
@@ -334,14 +349,50 @@ export default function AccountPage() {
           {section === "profile" && (
             <>
               <p className="product-category">Profile</p>
-              <h2>Delivery Information</h2>
+              <div className="account-profile-heading">
+                <h2>Personal information</h2>
+                {deliveryReady && deliveryInfo && (
+                  <button
+                    className="account-edit-button"
+                    type="button"
+                    onClick={() => {
+                      if (editingProfile) cancelProfileEdit();
+                      else setEditingProfile(true);
+                    }}
+                    aria-label={
+                      editingProfile ? "Cancel editing details" : "Edit details"
+                    }
+                  >
+                    {editingProfile ? (
+                      "Cancel"
+                    ) : (
+                      <>
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 20 20"
+                          width="16"
+                          height="16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="m12.8 3.2 4 4M3 17l3.7-.8L16.6 6.3a2.1 2.1 0 0 0-3-3L3.7 13.2 3 17Z" />
+                        </svg>
+                        Edit details
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
               <p className="account-section-lead">
-                Save your contact and Pakistan delivery address for your
+                Your contact details and delivery address, saved to your
                 account.
               </p>
               {!deliveryReady || !deliveryInfo ? (
-                <p aria-live="polite">Loading your delivery information...</p>
-              ) : (
+                <p aria-live="polite">Loading your account details...</p>
+              ) : editingProfile ? (
                 <form
                   className="delivery-form"
                   onSubmit={saveDeliveryInfo}
@@ -527,12 +578,12 @@ export default function AccountPage() {
                   </div>
                   <div className="delivery-form-footer">
                     <p>
-                      Delivery information is saved in this browser for this
-                      account. It is not synced to other devices.
+                      These details are saved to your account and available
+                      when you sign in on another device.
                     </p>
                     <div className="account-actions">
                       <button className="btn" type="submit" disabled={busy}>
-                        {busy ? "Saving..." : "Save delivery information"}
+                        {busy ? "Saving..." : "Save details"}
                       </button>
                       <button
                         className="btn account-signout"
@@ -542,9 +593,96 @@ export default function AccountPage() {
                       >
                         Reset password
                       </button>
+                      <button
+                        className="btn account-signout"
+                        type="button"
+                        onClick={cancelProfileEdit}
+                        disabled={busy}
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </div>
                 </form>
+              ) : (
+                <div className="account-profile-summary">
+                  <section className="account-profile-card">
+                    <h3>Contact details</h3>
+                    <dl>
+                      <div>
+                        <dt>Full name</dt>
+                        <dd>{deliveryInfo.fullName || "Not provided"}</dd>
+                      </div>
+                      <div>
+                        <dt>Email address</dt>
+                        <dd>{user.email || "No email linked to this account"}</dd>
+                      </div>
+                      <div>
+                        <dt>Phone number</dt>
+                        <dd>{deliveryInfo.phone || "Not provided"}</dd>
+                      </div>
+                    </dl>
+                  </section>
+                  <section className="account-profile-card">
+                    <h3>Delivery address</h3>
+                    {hasDeliveryAddress ? (
+                      <dl>
+                        <div>
+                          <dt>Delivery label</dt>
+                          <dd>
+                            {deliveryInfo.label === "office" ? "Office" : "Home"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Province / region</dt>
+                          <dd>{deliveryInfo.province || "Not provided"}</dd>
+                        </div>
+                        <div>
+                          <dt>City</dt>
+                          <dd>{deliveryInfo.city || "Not provided"}</dd>
+                        </div>
+                        <div>
+                          <dt>Building / street</dt>
+                          <dd>{deliveryInfo.building || "Not provided"}</dd>
+                        </div>
+                        <div>
+                          <dt>Area / neighbourhood</dt>
+                          <dd>{deliveryInfo.area || "Not provided"}</dd>
+                        </div>
+                        {deliveryInfo.locality && (
+                          <div>
+                            <dt>Colony / landmark</dt>
+                            <dd>{deliveryInfo.locality}</dd>
+                          </div>
+                        )}
+                        {deliveryInfo.address && (
+                          <div>
+                            <dt>Address details</dt>
+                            <dd>{deliveryInfo.address}</dd>
+                          </div>
+                        )}
+                      </dl>
+                    ) : (
+                      <p className="account-profile-empty">
+                        No delivery address saved yet. Choose Edit details to
+                        add one.
+                      </p>
+                    )}
+                  </section>
+                  <div className="account-profile-footer">
+                    <p>
+                      Your email address is managed by your sign-in method.
+                    </p>
+                    <button
+                      className="btn account-signout"
+                      type="button"
+                      onClick={sendPasswordReset}
+                      disabled={busy || !user.email}
+                    >
+                      Reset password
+                    </button>
+                  </div>
+                </div>
               )}
             </>
           )}

@@ -241,7 +241,7 @@ nav.d a:hover {
   display: none;
   border-top: 1px solid var(--sand);
   padding: 8px 16px 16px;
-  background: rgba(255, 255, 255, 0.8);
+  background: #24603E;
 }
 #mm.open {
   display: block;
@@ -1733,6 +1733,97 @@ footer small {
   margin: 8px 0 20px;
   opacity: 0.72;
 }
+.account-profile-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.account-profile-heading h2 {
+  color: var(--forest);
+  font-size: 28px;
+}
+.account-edit-button {
+  display: inline-flex;
+  min-height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--sand);
+  border-radius: 999px;
+  padding: 0 13px;
+  background: var(--tint2);
+  color: var(--forest);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+.account-edit-button:hover {
+  border-color: var(--olive);
+  background: var(--tint);
+}
+.account-profile-summary {
+  display: grid;
+  gap: 16px;
+  margin-top: 22px;
+}
+.account-profile-card {
+  min-width: 0;
+  border: 1px solid var(--sand);
+  border-radius: 14px;
+  padding: 18px;
+  background: var(--tint2);
+}
+.account-profile-card h3 {
+  margin: 0 0 12px;
+  color: var(--forest);
+  font-size: 18px;
+}
+.account-profile-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 22px;
+  margin: 0;
+}
+.account-profile-card dl > div {
+  min-width: 0;
+}
+.account-profile-card dt {
+  margin-bottom: 3px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.65;
+}
+.account-profile-card dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+}
+.account-profile-empty {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  opacity: 0.72;
+}
+.account-profile-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  border-top: 1px solid var(--sand);
+  padding-top: 16px;
+}
+.account-profile-footer p {
+  flex: 1 1 260px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  opacity: 0.68;
+}
 .account-profile-form {
   display: grid;
   gap: 9px;
@@ -2015,6 +2106,9 @@ footer small {
   margin-top: 0;
 }
 @media (max-width: 767px) {
+  .logo span {
+    display: none;
+  }
   .header-action {
     width: 36px;
     height: 36px;
@@ -2047,6 +2141,10 @@ footer small {
   }
   .account-content {
     min-height: 0;
+  }
+  .account-profile-card dl {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
   .account-wishlist-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

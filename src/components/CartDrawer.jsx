@@ -1,24 +1,62 @@
 import { useEffect, useState } from "react";
 import { useCart } from "../context/cart.jsx";
-import { money } from "../config.js";
+import { money, instaWorld } from "../config.js";
 import { useAuth } from "../context/auth.jsx";
+import {
+  loadDeliveryInfo,
+  makeDeliveryInfo,
+  saveDeliveryInfo,
+} from "../accountProfile.js";
 import { db } from "../firebase.js";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { pakistanLocations } from "../data/pakistanLocations.js";
 
-const deliveryStorageKey = (uid) => `zee-delivery:${uid}`;
+// --- INSTA WORLD FUNCTION ---
+async function createInstaWorldParcel(orderData) {
+  if (!instaWorld.apiKey) {
+    console.warn("Insta World API Key missing!");
+    return null;
+  }
 
-const makeDeliveryInfo = (user) => ({
-  fullName: user.displayName || "",
-  phone: user.phoneNumber || "",
-  province: "",
-  city: "",
-  building: "",
-  area: "",
-  locality: "",
-  address: "",
-  label: "home",
-});
+  // Build address string
+  const fullAddress = `${orderData.address.building}, ${orderData.address.area}, ${orderData.address.locality ? orderData.address.locality + ', ' : ''}${orderData.address.address ? orderData.address.address + ', ' : ''}${orderData.address.city}, ${orderData.address.province}`;
+
+  const payload = {
+    customer_name: orderData.customerName,
+    customer_phone: orderData.phone,
+    customer_address: fullAddress,
+    customer_city: orderData.address.city,
+    customer_province: orderData.address.province,
+    cod_amount: orderData.total,
+    order_id: orderData.orderId || Date.now().toString(),
+    product_details: orderData.items.map(i => `${i.name} x ${i.qty}`).join(", "),
+    weight: "1",
+    pieces: orderData.count.toString(),
+    // Add more fields as per Aisha's docs
+  };
+
+  try {
+    // OPTION 1: Direct call (works with your VITE key)
+    const res = await fetch(instaWorld.apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": `Bearer ${instaWorld.apiKey}`,
+        // Some APIs use X-API-KEY, if above fails, try this:
+        // "X-API-KEY": instaWorld.apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+    console.log("✅ Insta World Response:", result);
+    return result;
+  } catch (err) {
+    console.error("❌ Insta World Error:", err);
+    return null;
+  }
+}
 
 export default function CartDrawer() {
   const c = useCart();
@@ -39,22 +77,34 @@ export default function CartDrawer() {
     setCheckoutError("");
     if (!user) {
       setDeliveryInfo(null);
-      return;
-    }
-
-    try {
-      const saved = localStorage.getItem(deliveryStorageKey(user.uid));
-      setDeliveryInfo(
-        saved
-          ? { ...makeDeliveryInfo(user), ...JSON.parse(saved) }
-          : makeDeliveryInfo(user),
-      );
-    } catch (error) {
-      console.error("Unable to load saved delivery information.", error);
-      setDeliveryInfo(makeDeliveryInfo(user));
-      setCheckoutError("Could not load saved delivery information.");
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !c.open) return undefined;
+    let active = true;
+    setCheckoutError("");
+    const loadProfile = async () => {
+      try {
+        const { deliveryInfo: savedInfo, syncWarning } =
+          await loadDeliveryInfo(user);
+        if (active) {
+          setDeliveryInfo(savedInfo);
+          setCheckoutError(syncWarning);
+        }
+      } catch (error) {
+        console.error("Unable to load the customer profile for checkout.", error);
+        if (active) {
+          setDeliveryInfo(makeDeliveryInfo(user));
+          setCheckoutError("Could not load your saved account details.");
+        }
+      }
+    };
+    loadProfile();
+    return () => {
+      active = false;
+    };
+  }, [c.open, user]);
 
   const updateDeliveryField = (field, value) => {
     setDeliveryInfo((current) => ({ ...current, [field]: value }));
@@ -89,11 +139,19 @@ export default function CartDrawer() {
     setSubmitting(true);
     setCheckoutError("");
     try {
-      localStorage.setItem(
-        deliveryStorageKey(user.uid),
-        JSON.stringify(orderDeliveryInfo),
-      );
-      await addDoc(collection(db, "orders"), {
+      let profileSaveFailed = false;
+      try {
+        await saveDeliveryInfo(user, orderDeliveryInfo);
+      } catch (profileError) {
+        console.error(
+          "Unable to update the customer profile from checkout.",
+          profileError,
+        );
+        profileSaveFailed = true;
+      }
+
+      // 1. Save to Firebase
+      const orderRef = await addDoc(collection(db, "orders"), {
         userId: user.uid,
         email: user.email || "",
         customerName: orderDeliveryInfo.fullName,
@@ -112,10 +170,33 @@ export default function CartDrawer() {
         status: "pending",
         createdAt: serverTimestamp(),
       });
+
+      // 2. SEND TO INSTA WORLD COURIER - NEW CODE!
+      const instaResult = await createInstaWorldParcel({
+        customerName: orderDeliveryInfo.fullName,
+        phone: orderDeliveryInfo.phone,
+        address: orderDeliveryInfo,
+        items: c.items.map(({ p, q }) => ({ name: p.n, qty: q })),
+        total: c.total,
+        count: c.count,
+        orderId: orderRef.id,
+      });
+
       c.items.forEach(({ p, q }) => c.change(p.id, -q));
       setCheckoutOpen(false);
       c.setOpen(false);
-      alert("Order placed! We will contact you soon.");
+
+      if (instaResult && instaResult.tracking_number) {
+        alert(
+          `Order placed! Tracking: ${instaResult.tracking_number}. We will contact you soon.`,
+        );
+      } else {
+        alert(
+          profileSaveFailed
+            ? "Order placed! We will contact you soon. Your address was saved with the order, but could not be updated in your account profile."
+            : "Order placed! We will contact you soon.",
+        );
+      }
     } catch (error) {
       console.error("Unable to place the order.", error);
       setCheckoutError(
