@@ -170,12 +170,12 @@ export default function CartDrawer() {
         status: "pending",
         createdAt: serverTimestamp(),
       });
-
-      // 2. SEND TO INSTA WORLD COURIER - NEW CODE!
+      // 2. SEND TO INSTA WORLD COURIER - FIXED CODE!
       const instaResult = await createInstaWorldParcel({
         customerName: orderDeliveryInfo.fullName,
         phone: orderDeliveryInfo.phone,
-        address: orderDeliveryInfo,
+        address: `${orderDeliveryInfo.building}, ${orderDeliveryInfo.area}, ${orderDeliveryInfo.city}, ${orderDeliveryInfo.province}`,
+        city: orderDeliveryInfo.city,
         items: c.items.map(({ p, q }) => ({ name: p.n, qty: q })),
         total: c.total,
         count: c.count,
