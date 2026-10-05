@@ -40,6 +40,7 @@
   --onforest: #edf4eb;
 }
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
   scroll-padding-top: env(safe-area-inset-top, 0px);
 }
@@ -389,7 +390,7 @@ h2 {
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 20px;
 }
@@ -896,7 +897,8 @@ footer small {
 .band::before {
   content: "";
   position: absolute;
-  inset: 0 -100vmax;
+  inset-block: 0;
+  inset-inline: calc((100% - 100vw) / 2);
   background: rgb(255 255 255);
   z-index: -1;
   border-block: 1px solid var(--sand);
@@ -2056,6 +2058,27 @@ footer small {
   .delivery-form-footer {
     align-items: stretch;
     flex-direction: column;
+  }
+}
+@media (max-width: 520px) {
+  .card-purchase .row {
+    height: auto;
+    flex-wrap: wrap;
+  }
+  .card-purchase .price {
+    height: auto;
+    flex: 1 0 100%;
+    min-height: 32px;
+  }
+  .card-purchase .card-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .card-purchase .heart,
+  .card-purchase .add {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
   }
 }
 @media (max-width: 480px) {
