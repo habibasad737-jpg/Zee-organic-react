@@ -1,0 +1,346 @@
+{
+  "products": {
+    "c1": {
+      "file": "c1.jpg",
+      "alt": "blue ceramic mug on coffee beans",
+      "source": "https://unsplash.com/photos/blue-ceramic-mug-on-coffee-beans-p3dGOGBFbP4"
+    },
+    "h1": {
+      "file": "h1.jpg",
+      "alt": "a wooden bowl filled with herbs on top of a table",
+      "source": "https://unsplash.com/photos/a-wooden-bowl-filled-with-herbs-on-top-of-a-table-eZ0-0K1Bu4o"
+    },
+    "c2": {
+      "file": "c2.jpg",
+      "alt": "brown coffee beans on brown wooden table",
+      "source": "https://unsplash.com/photos/brown-coffee-beans-on-brown-wooden-table-lcfH0p6emhw"
+    },
+    "s1": {
+      "file": "s1.jpg",
+      "alt": "a pile of seeds on a white surface",
+      "source": "https://unsplash.com/photos/a-pile-of-seeds-on-a-white-surface-jXEsLogwsIA"
+    },
+    "s3": {
+      "file": "s3.jpg",
+      "alt": "a glass bowl filled with seeds and seeds on top of a table",
+      "source": "https://unsplash.com/photos/a-glass-bowl-filled-with-seeds-and-seeds-on-top-of-a-table-68mGF9U2458"
+    },
+    "s2": {
+      "file": "s2.jpg",
+      "alt": "close up photo of brown seed inside bowl",
+      "source": "https://unsplash.com/photos/close-up-photo-of-brown-seed-inside-bowl-BB3SLw6Ii_I"
+    },
+    "m1": {
+      "file": "m1.jpg",
+      "alt": "Close-up of honeycomb dripping with golden honey",
+      "source": "https://unsplash.com/photos/close-up-of-honeycomb-dripping-with-golden-honey-aHar1sfy9co"
+    },
+    "h2": {
+      "file": "h2.jpg",
+      "alt": "seven different spices and herbs on gray stainless steel spoons",
+      "source": "https://unsplash.com/photos/seven-different-spices-and-herbs-on-gray-stainless-steel-spoons-59Kh3TAajg0"
+    },
+    "coffee-01": {
+      "file": "coffee-01.jpg",
+      "alt": "brown coffee beans",
+      "source": "https://unsplash.com/photos/brown-coffee-beans-fjrl9YBYEL0"
+    },
+    "coffee-03": {
+      "file": "coffee-03.jpg",
+      "alt": "white ceramic coffee mug with capuccino",
+      "source": "https://unsplash.com/photos/white-ceramic-coffee-mug-with-capuccino-6cY1xBGn9ZI"
+    },
+    "coffee-04": {
+      "file": "coffee-04.jpg",
+      "alt": "A coffee cup sits on a windowsill",
+      "source": "https://unsplash.com/photos/a-coffee-cup-sits-on-a-windowsill-9hmY9OZme14"
+    },
+    "coffee-02": {
+      "file": "coffee-02.jpg",
+      "alt": "Coffee beans, ground coffee, and a cup of black coffee on a white surface",
+      "source": "https://unsplash.com/photos/coffee-beans-and-ground-coffee-breakfast-LMzwJDu6hTE"
+    },
+    "coffee-05": {
+      "file": "coffee-05.jpg",
+      "alt": "a white coffee cup with a black lid",
+      "source": "https://unsplash.com/photos/a-white-coffee-cup-with-a-black-lid-FWIV8I2h-s0"
+    },
+    "coffee-06": {
+      "file": "coffee-06.jpg",
+      "alt": "A white ceramic cup resting in a pile of roasted coffee beans",
+      "source": "https://unsplash.com/photos/coffee-beans-with-white-cup-S8daAB_nJSg"
+    },
+    "coffee-07": {
+      "file": "coffee-07.jpg",
+      "alt": "brown coffee beans on white ceramic mug",
+      "source": "https://unsplash.com/photos/brown-coffee-beans-on-white-ceramic-mug-rEYaMYYVePw"
+    },
+    "coffee-08": {
+      "file": "coffee-08.jpg",
+      "alt": "Bag of coffee next to iced coffee in glass",
+      "source": "https://unsplash.com/photos/bag-of-coffee-next-to-iced-coffee-in-glass-xMPAxLQW3Fs"
+    },
+    "herbal-03": {
+      "file": "herbal-03.jpg",
+      "alt": "Close-up of vibrant green moringa leaves on branches",
+      "source": "https://unsplash.com/photos/close-up-of-vibrant-green-moringa-leaves-on-branches-fz7nSSfQDZo"
+    },
+    "herbal-02": {
+      "file": "herbal-02.jpg",
+      "alt": "a ginger root and a piece of ginger on a white surface",
+      "source": "https://unsplash.com/photos/a-ginger-root-and-a-piece-of-ginger-on-a-white-surface-ziCb4_EKmak"
+    },
+    "herbal-01": {
+      "file": "herbal-01.jpg",
+      "alt": "green and red plant in tilt shift lens",
+      "source": "https://unsplash.com/photos/green-and-red-plant-in-tilt-shift-lens-hX_wNuOLW7Q"
+    },
+    "herbal-06": {
+      "file": "herbal-06.jpg",
+      "alt": "A field of white and yellow chamomile flowers blooming",
+      "source": "https://unsplash.com/photos/a-field-of-white-and-yellow-chamomile-flowers-blooming-op3oZCQWPuU"
+    },
+    "herbal-04": {
+      "file": "herbal-04.jpg",
+      "alt": "Leaves and flowers bloom on a tree branch",
+      "source": "https://unsplash.com/photos/leaves-and-flowers-bloom-on-a-tree-branch-rWWoelgz3So"
+    },
+    "herbal-05": {
+      "file": "herbal-05.jpg",
+      "alt": "a large pile of yellow fruit",
+      "source": "https://unsplash.com/photos/a-large-pile-of-yellow-fruit-MaQ6AjLaRXQ"
+    },
+    "herbal-07": {
+      "file": "herbal-07.jpg",
+      "alt": "a close up of a green plant with lots of leaves",
+      "source": "https://unsplash.com/photos/a-close-up-of-a-green-plant-with-lots-of-leaves-8avQLOHmcG4"
+    },
+    "tea-01": {
+      "file": "tea-01.jpg",
+      "alt": "a glass of green tea next to a bowl of green tea",
+      "source": "https://unsplash.com/photos/a-glass-of-green-tea-next-to-a-bowl-of-green-tea-9hkqJ0bg6rA"
+    },
+    "tea-02": {
+      "file": "tea-02.jpg",
+      "alt": "a bunch of white and yellow flowers in a field",
+      "source": "https://unsplash.com/photos/a-bunch-of-white-and-yellow-flowers-in-a-field-8f2Qy3oAjr0"
+    },
+    "tea-04": {
+      "file": "tea-04.jpg",
+      "alt": "a drink with a straw in it sitting on a table",
+      "source": "https://unsplash.com/photos/a-drink-with-a-straw-in-it-sitting-on-a-table-9nBpQJpl40g"
+    },
+    "tea-03": {
+      "file": "tea-03.jpg",
+      "alt": "a close up of a bush with green leaves",
+      "source": "https://unsplash.com/photos/a-close-up-of-a-bush-with-green-leaves-1L0kxXvXyj4"
+    },
+    "tea-05": {
+      "file": "tea-05.jpg",
+      "alt": "selective focus photography of red hibiscus flower",
+      "source": "https://unsplash.com/photos/selective-focus-photography-of-red-hibiscus-flower-Qe3WH2oDu5Q"
+    },
+    "tea-06": {
+      "file": "tea-06.jpg",
+      "alt": "sliced lemon on red ceramic saucer beside red ceramic mug with black liquid",
+      "source": "https://unsplash.com/photos/sliced-lemon-on-red-ceramic-saucer-beside-red-ceramic-mug-with-black-liquid-w78zqfnBL78"
+    },
+    "tea-07": {
+      "file": "tea-07.jpg",
+      "alt": "Elegant blue teacup and saucer on a wooden table",
+      "source": "https://unsplash.com/photos/elegant-blue-teacup-and-saucer-on-a-wooden-table-Pv005VYz0Q4"
+    },
+    "seed-01": {
+      "file": "seed-01.jpg",
+      "alt": "A close-up of many raw green pumpkin seeds with brown markings",
+      "source": "https://unsplash.com/photos/raw-green-pumpkin-seeds-wNtwXZc7g7A"
+    },
+    "seed-03": {
+      "file": "seed-03.jpg",
+      "alt": "Close up of a loaf of bread with sesame seeds",
+      "source": "https://unsplash.com/photos/close-up-of-a-loaf-of-bread-with-sesame-seeds-x4J__1fqOtE"
+    },
+    "seed-02": {
+      "file": "seed-02.jpg",
+      "alt": "Sunflower seeds in a bowl and on a spoon",
+      "source": "https://unsplash.com/photos/sunflower-seeds-in-a-bowl-and-on-a-spoon-qIVBLLBYSx4"
+    },
+    "seed-04": {
+      "file": "seed-04.jpg",
+      "alt": "Savory pancakes with black sesame seeds, avocados, and white sauce",
+      "source": "https://unsplash.com/photos/savory-pancakes-with-black-sesame-seeds-avocados-and-white-sauce-dYHVXIhVLM4"
+    },
+    "seed-05": {
+      "file": "seed-05.jpg",
+      "alt": "watermelon fruit on white table",
+      "source": "https://unsplash.com/photos/watermelon-fruit-on-white-table-izi5AnlbRIA"
+    },
+    "seed-06": {
+      "file": "seed-06.jpg",
+      "alt": "black seeds on white sand",
+      "source": "https://unsplash.com/photos/black-seeds-on-white-sand-vCpbmT9jQGs"
+    },
+    "food-01": {
+      "file": "food-01.jpg",
+      "alt": "A bowl of oatmeal on a white background",
+      "source": "https://unsplash.com/photos/a-bowl-of-oatmeal-on-a-white-background-pHadlbNGO7E"
+    },
+    "seed-08": {
+      "file": "seed-08.jpg",
+      "alt": "a variety of beans and cereals in trays",
+      "source": "https://unsplash.com/photos/a-variety-of-beans-and-cereals-in-trays-TRwU_MgG1sQ"
+    },
+    "seed-07": {
+      "file": "seed-07.jpg",
+      "alt": "white ceramic bowl with brown seeds",
+      "source": "https://unsplash.com/photos/white-ceramic-bowl-with-brown-seeds-hwTuls0nmKg"
+    },
+    "food-02": {
+      "file": "food-02.jpg",
+      "alt": "a wooden spoon full of oats on a gray background",
+      "source": "https://unsplash.com/photos/a-wooden-spoon-full-of-oats-on-a-gray-background-7jeuZBH9jB4"
+    },
+    "food-03": {
+      "file": "food-03.jpg",
+      "alt": "Quinoa salad with pomegranate seeds and feta cheese",
+      "source": "https://unsplash.com/photos/quinoa-salad-with-pomegranate-seeds-and-feta-cheese-X2-R25T1A2A"
+    },
+    "food-04": {
+      "file": "food-04.jpg",
+      "alt": "Green millet plants with seed heads glowing in sunlight",
+      "source": "https://unsplash.com/photos/green-millet-plants-with-seed-heads-glowing-in-sunlight-JtizjunFr9E"
+    },
+    "food-05": {
+      "file": "food-05.jpg",
+      "alt": "brown and yellow almond nuts",
+      "source": "https://unsplash.com/photos/brown-and-yellow-almond-nuts-JaoHjL6t0RM"
+    },
+    "food-06": {
+      "file": "food-06.jpg",
+      "alt": "a white bowl filled with cashews on a white surface",
+      "source": "https://unsplash.com/photos/a-white-bowl-filled-with-cashews-on-a-white-surface-o47xxQePHAo"
+    },
+    "sweetener-01": {
+      "file": "sweetener-01.jpg",
+      "alt": "Honey being poured into a glass bowl surrounded by plants",
+      "source": "https://unsplash.com/photos/honey-being-poured-into-a-glass-bowl-surrounded-by-plants-xoEVs6HHwtw"
+    },
+    "food-07": {
+      "file": "food-07.jpg",
+      "alt": "a display of dried fruits and nuts for sale",
+      "source": "https://unsplash.com/photos/a-display-of-dried-fruits-and-nuts-for-sale-SsGogfrak64"
+    },
+    "sweetener-02": {
+      "file": "sweetener-02.jpg",
+      "alt": "A golden honeycomb with hexagonal cells filled with liquid honey",
+      "source": "https://unsplash.com/photos/honeycomb-with-golden-liquid-honey-3Cpws7ibtfo"
+    },
+    "sweetener-03": {
+      "file": "sweetener-03.jpg",
+      "alt": "coconuts on white surface",
+      "source": "https://unsplash.com/photos/coconuts-on-white-surface-E95Lpkg-bgc"
+    },
+    "sweetener-04": {
+      "file": "sweetener-04.jpg",
+      "alt": "a white plate topped with lots of red dates",
+      "source": "https://unsplash.com/photos/a-white-plate-topped-with-lots-of-red-dates-1TioYIOoEw0"
+    },
+    "sweetener-05": {
+      "file": "sweetener-05.jpg",
+      "alt": "bowl of sugar",
+      "source": "https://unsplash.com/photos/bowl-of-sugar-wEXCdBz-3sU"
+    },
+    "spice-01": {
+      "file": "spice-01.jpg",
+      "alt": "A pile of bright yellow turmeric powder",
+      "source": "https://unsplash.com/photos/a-pile-of-bright-yellow-turmeric-powder-XGB72JP6Kms"
+    },
+    "spice-02": {
+      "file": "spice-02.jpg",
+      "alt": "cinnamon sticks and cinnamon powder on a table",
+      "source": "https://unsplash.com/photos/cinnamon-sticks-and-cinnamon-powder-on-a-table-Xvjs1G812Yo"
+    },
+    "spice-03": {
+      "file": "spice-03.jpg",
+      "alt": "Pile of fresh ginger roots close up",
+      "source": "https://unsplash.com/photos/pile-of-fresh-ginger-roots-close-up-m_mIEhLkppE"
+    },
+    "spice-05": {
+      "file": "spice-05.jpg",
+      "alt": "brown and black seeds on brown wooden table",
+      "source": "https://unsplash.com/photos/brown-and-black-seeds-on-brown-wooden-table-gc6H57-vDeo"
+    },
+    "spice-04": {
+      "file": "spice-04.jpg",
+      "alt": "a bowl of black pepper on an orange background",
+      "source": "https://unsplash.com/photos/a-bowl-of-black-pepper-on-an-orange-background-6FulpMThQ00"
+    },
+    "spice-06": {
+      "file": "spice-06.jpg",
+      "alt": "red spices on blue bowl with peppers scattered on table",
+      "source": "https://unsplash.com/photos/red-spices-on-blue-bowl-with-peppers-scattered-on-table-36g2WADarDk"
+    },
+    "gift-01": {
+      "file": "gift-01.jpg",
+      "alt": "a box of coffee beans sitting on top of a table",
+      "source": "https://unsplash.com/photos/a-box-of-coffee-beans-sitting-on-top-of-a-table-Mf3H1xmjgFQ"
+    },
+    "gift-02": {
+      "file": "gift-02.jpg",
+      "alt": "A wooden box filled with different types of food",
+      "source": "https://unsplash.com/photos/a-wooden-box-filled-with-different-types-of-food-_5P4dLtPWl4"
+    },
+    "gift-04": {
+      "file": "gift-04.jpg",
+      "alt": "yellow and green beans on white ceramic plate",
+      "source": "https://unsplash.com/photos/yellow-and-green-beans-on-white-ceramic-plate-3SimRsAd2nQ"
+    },
+    "gift-03": {
+      "file": "gift-03.jpg",
+      "alt": "a group of packages of food",
+      "source": "https://unsplash.com/photos/a-group-of-packages-of-food-2fWGcrPi164"
+    }
+  },
+  "categories": {
+    "instant-coffee": {
+      "file": "instant-coffee.jpg",
+      "alt": "Roasted coffee beans scattered on a textured wooden surface",
+      "source": "https://unsplash.com/photos/roasted-coffee-beans-scattered-on-a-textured-wooden-surface-EP-Ps6py0LU"
+    },
+    "herbal-tea": {
+      "file": "herbal-tea.jpg",
+      "alt": "a woman pouring tea into a glass cup",
+      "source": "https://unsplash.com/photos/a-woman-pouring-tea-into-a-glass-cup-tg3F5ta2MZI"
+    },
+    "food-seeds": {
+      "file": "food-seeds.jpg",
+      "alt": "A close-up view of chia seeds",
+      "source": "https://unsplash.com/photos/a-close-up-view-of-chia-seeds-rTKCRfsNlGQ"
+    },
+    "herbal-products": {
+      "file": "herbal-products.jpg",
+      "alt": "Fresh green bay leaves arranged in a neat overlapping pattern",
+      "source": "https://unsplash.com/photos/green-bay-leaves-pattern-wKTF65TcReY"
+    },
+    "healthy-foods": {
+      "file": "healthy-foods.jpg",
+      "alt": "red and white fruit salad on white ceramic bowl",
+      "source": "https://unsplash.com/photos/red-and-white-fruit-salad-on-white-ceramic-bowl-9KcCLOFn2bc"
+    },
+    "natural-sweeteners": {
+      "file": "natural-sweeteners.jpg",
+      "alt": "a glass jar filled with honey sitting on a plate",
+      "source": "https://unsplash.com/photos/a-glass-jar-filled-with-honey-sitting-on-a-plate-LIIY1XV2xrg"
+    },
+    "spices-herbs": {
+      "file": "spices-herbs.jpg",
+      "alt": "assorted spices in clear glass containers",
+      "source": "https://unsplash.com/photos/assorted-spices-in-clear-glass-containers-dSbUXPQ8Sm8"
+    },
+    "gift-sets": {
+      "file": "gift-sets.jpg",
+      "alt": "an open box of food on a table",
+      "source": "https://unsplash.com/photos/an-open-box-of-food-on-a-table-xlynvwa9Jxg"
+    }
+  }
+}
