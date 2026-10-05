@@ -1,35 +1,32 @@
 export default async function handler(req, res) {
-  // Allow CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const apiKey = process.env.VITE_INSTA_API_KEY || process.env.INSTA_API_KEY;
+    const API_KEY = process.env.VITE_INSTA_WORLD_API_KEY || process.env.VITE_INSTA_API_KEY || process.env.INSTA_API_KEY;
+    if (!API_KEY) return res.status(500).json({ error: 'API_KEY_MISSING_IN_VERCEL' });
+
+    const payload = req.body;
     
-    const response = await fetch('https://one.instaworld.pk/api/v1/shipments', {
+    const r = await fetch('https://one.instaworld.pk/api/v1/shipments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'api-key': apiKey,
-        'x-api-key': apiKey,
+        'api-key': API_KEY,
       },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    console.error('Proxy Error:', error);
-    return res.status(500).json({ error: error.message });
+    const txt = await r.text();
+    let json;
+    try { json = JSON.parse(txt); } 
+    catch { return res.status(500).json({ error: 'INSTA_RETURNED_HTML', status: r.status, html: txt.slice(0, 600) }); }
+
+    return res.status(r.status).json(json);
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
   }
 }
