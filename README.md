@@ -13,5 +13,24 @@
   }
   ```
 
-  Add this match inside the existing `/databases/{database}/documents` rules block without replacing the rest of your rules. Wishlists remain stored in this browser per Firebase user and are not synced between devices. Orders, returns/cancellations and account-linked reviews need a real checkout/order and review backend; checkout and product ratings are currently demo data.
-- Placeholders: checkout/payment, newsletter API and orders. Product review counts are demo data.
+  Add this match inside the existing `/databases/{database}/documents` rules block without replacing the rest of your rules. Orders are saved in the `orders` collection when checkout is completed. To allow customers to read only their own orders and the verified administrator to read all orders and update only fulfilment status/tracking, add this match to the same rules block:
+
+  ```text
+  match /orders/{orderId} {
+    allow create: if request.auth != null
+      && request.resource.data.userId == request.auth.uid;
+    allow read: if request.auth != null
+      && (resource.data.userId == request.auth.uid
+        || (request.auth.token.email == "khansher7377@gmail.com"
+          && request.auth.token.email_verified == true));
+    allow update: if request.auth != null
+      && request.auth.token.email == "khansher7377@gmail.com"
+      && request.auth.token.email_verified == true
+      && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(["status", "instaTracking"]);
+    allow delete: if false;
+  }
+  ```
+
+  The admin dashboard is available at `/admin`. Sign in with the listed administrator account and verify its email before use. Apply the Firestore rule above in Firebase Console; the admin interface check alone does not grant database access. Wishlists remain stored in this browser per Firebase user and are not synced between devices.
+- Placeholders: payment collection, newsletter API and product review counts.
