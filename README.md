@@ -39,7 +39,15 @@
       && request.auth.token.email_verified == true;
     allow delete: if false;
   }
+
+  match /adminProfiles/{userId} {
+    allow read, write: if request.auth != null
+      && request.auth.uid == userId
+      && request.auth.token.email == "khansher7377@gmail.com"
+      && request.auth.token.email_verified == true;
+  }
   ```
 
   The admin dashboard is available at `/admin`. Sign in with the listed administrator account and verify its email before use. Open **Products & categories** to add, edit, or remove catalog items, update prices, stock quantities and pack sizes, and manage categories. The first admin visit copies the current built-in catalog into the `storefront/catalog` Firestore document; subsequent admin changes sync to the existing storefront without changing its layout. Product and category image fields accept an existing site path or an image URL. Stock levels are managed manually and are not automatically reduced when an order is placed. Apply these Firestore rules in Firebase Console; the admin interface check alone does not grant database access. Wishlists remain stored in this browser per Firebase user and are not synced between devices.
+- Admin **Settings** stores the admin display name and contact phone in `adminProfiles/{uid}`. The sign-in email and verification status are shown from Firebase Authentication, and password reset is sent through Firebase. Add the `adminProfiles` rule above to enable profile saving.
 - Placeholders: payment collection, newsletter API and product review counts.

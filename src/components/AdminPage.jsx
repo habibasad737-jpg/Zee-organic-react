@@ -10,6 +10,7 @@ import { auth, db } from "../firebase.js";
 import { money } from "../config.js";
 import { useAuth } from "../context/auth.jsx";
 import AdminCatalogPage from "./AdminCatalogPage.jsx";
+import AdminSettingsPage from "./AdminSettingsPage.jsx";
 import SignInModal from "./SignInModal.jsx";
 
 const ADMIN_EMAIL = "khansher7377@gmail.com";
@@ -317,6 +318,12 @@ export default function AdminPage() {
         >
           <span>▧</span> Products & categories
         </button>
+        <button
+          className={`admin-nav-item ${activeView === "settings" ? "active" : ""}`}
+          onClick={() => setActiveView("settings")}
+        >
+          <span>⚙</span> Settings
+        </button>
         <div className="admin-sidebar-bottom">
           <div className="admin-user-chip">
             <span className="admin-avatar">{user.email?.[0]?.toUpperCase() || "A"}</span>
@@ -338,7 +345,9 @@ export default function AdminPage() {
                 ? "Dashboard"
                 : activeView === "orders"
                   ? "Orders"
-                  : "Products & categories"}
+                  : activeView === "catalog"
+                    ? "Products & categories"
+                    : "Settings"}
             </h1>
           </div>
           <button
@@ -455,6 +464,7 @@ export default function AdminPage() {
           )}
 
           {activeView === "catalog" && <AdminCatalogPage />}
+          {activeView === "settings" && <AdminSettingsPage user={user} />}
         </div>
       </section>
 
