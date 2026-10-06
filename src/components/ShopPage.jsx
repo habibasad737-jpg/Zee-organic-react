@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { C, P } from "../data.js";
+import { useCatalog } from "../context/catalog.jsx";
 import ProductCard from "./ProductCard.jsx";
 
 const searchParams = new URLSearchParams(window.location.search);
@@ -7,13 +7,14 @@ const initialCategory = searchParams.get("category") || "all";
 const initialSearch = searchParams.get("q") || "";
 
 export default function ShopPage() {
+  const { categories, products: catalogProducts } = useCatalog();
   const [category, setCategory] = useState(initialCategory);
   const [query, setQuery] = useState(initialSearch);
   const [sort, setSort] = useState("featured");
 
-  const products = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return P.filter((product) => {
+    return catalogProducts.filter((product) => {
       const matchesCategory = category === "all" || product.cat === category;
       const matchesQuery =
         !normalizedQuery ||
@@ -28,7 +29,7 @@ export default function ShopPage() {
       if (sort === "name") return a.n.localeCompare(b.n);
       return 0;
     });
-  }, [category, query, sort]);
+  }, [catalogProducts, category, query, sort]);
 
   return (
     <main className="shop-page" id="top">
@@ -40,7 +41,7 @@ export default function ShopPage() {
             Explore our complete range of coffee, herbal favorites, pantry
             essentials and thoughtful gift sets.
           </p>
-          <span className="shop-count">{P.length} products to explore</span>
+          <span className="shop-count">{catalogProducts.length} products to explore</span>
         </div>
       </section>
 
@@ -83,7 +84,7 @@ export default function ShopPage() {
           >
             All products
           </button>
-          {C.map(([name, , , categoryId]) => (
+          {categories.map(({ name, id: categoryId }) => (
             <button
               className={category === categoryId ? "active" : ""}
               aria-pressed={category === categoryId}
@@ -97,12 +98,12 @@ export default function ShopPage() {
 
         <div className="shop-results">
           <p aria-live="polite">
-            Showing <strong>{products.length}</strong>{" "}
-            {products.length === 1 ? "product" : "products"}
+            Showing             <strong>{filteredProducts.length}</strong>{" "}
+            {filteredProducts.length === 1 ? "product" : "products"}
           </p>
           <div className="grid">
-            {products.length ? (
-              products.map((product) => (
+            {filteredProducts.length ? (
+              filteredProducts.map((product) => (
                 <ProductCard key={product.id} p={product} />
               ))
             ) : (

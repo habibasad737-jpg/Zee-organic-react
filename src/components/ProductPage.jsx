@@ -1,21 +1,22 @@
 import { useCallback, useState } from "react";
-import { C, P } from "../data.js";
 import { productPhoto } from "../art.js";
 import { money } from "../config.js";
+import { useCatalog } from "../context/catalog.jsx";
 import { useCart } from "../context/cart.jsx";
 import { useAuth } from "../context/auth.jsx";
 import ProductCard from "./ProductCard.jsx";
 import SignInModal from "./SignInModal.jsx";
 
-const categoryName = (category) =>
-  C.find(([, , , id]) => id === category)?.[0] || "Organic essentials";
-
 export default function ProductPage({ product }) {
+  const { categories, products } = useCatalog();
   const { change, setOpen } = useCart();
   const { user } = useAuth();
   const [signInOpen, setSignInOpen] = useState(false);
   const closeSignIn = useCallback(() => setSignInOpen(false), []);
-  const relatedProducts = P.filter(
+  const categoryName =
+    categories.find((item) => item.id === product.cat)?.name ||
+    "Organic essentials";
+  const relatedProducts = products.filter(
     (item) => item.cat === product.cat && item.id !== product.id,
   ).slice(0, 4);
   const discount = product.o
@@ -52,7 +53,7 @@ export default function ProductPage({ product }) {
           <a
             href={`/shop?category=${encodeURIComponent(product.cat)}#products`}
           >
-            {categoryName(product.cat)}
+            {categoryName}
           </a>
           <span aria-hidden="true">/</span>
           <span aria-current="page">{product.n}</span>
@@ -64,7 +65,7 @@ export default function ProductPage({ product }) {
           </div>
 
           <div className="product-detail-info">
-            <p className="product-category">{categoryName(product.cat)}</p>
+            <p className="product-category">{categoryName}</p>
             <h1>{product.n}</h1>
             {product.b && (
               <span className="product-detail-tag">{product.b}</span>
@@ -80,7 +81,7 @@ export default function ProductPage({ product }) {
 
             <p className="product-detail-description">{product.d}</p>
             <p className="product-detail-description">
-              Part of our {categoryName(product.cat).toLowerCase()} collection,
+              Part of our {categoryName.toLowerCase()} collection,
               selected to bring natural ingredients and everyday flavor to your
               home.
             </p>
@@ -130,7 +131,7 @@ export default function ProductPage({ product }) {
               <dl>
                 <div>
                   <dt>Category</dt>
-                  <dd>{categoryName(product.cat)}</dd>
+                  <dd>{categoryName}</dd>
                 </div>
                 <div>
                   <dt>Pack size</dt>
@@ -176,7 +177,7 @@ export default function ProductPage({ product }) {
         {relatedProducts.length > 0 && (
           <section className="related-products">
             <h2>You may also like</h2>
-            <p className="mut">More from {categoryName(product.cat)}.</p>
+            <p className="mut">More from {categoryName}.</p>
             <div className="grid">
               {relatedProducts.map((item) => (
                 <ProductCard key={item.id} p={item} />

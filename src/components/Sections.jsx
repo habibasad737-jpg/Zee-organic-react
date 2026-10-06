@@ -1,4 +1,4 @@
-import { C } from "../data.js";
+import { useCatalog } from "../context/catalog.jsx";
 import { categoryPhoto } from "../art.js";
 export function Hero() {
   return (
@@ -41,6 +41,7 @@ export function Hero() {
   );
 }
 export function Categories({ onPick }) {
+  const { categories } = useCatalog();
   return (
     <section className="s band" id="cats">
       <h2>Shop by category</h2>
@@ -48,16 +49,24 @@ export function Categories({ onPick }) {
         Explore our carefully selected range of everyday natural products.
       </p>
       <ul className="cats">
-        {C.filter((c) => c[3] !== "gift-sets").map((c) => (
-          <li key={c[0]}>
-            <a className="cat" href="#best" onClick={() => onPick(c[3])}>
-              <i>
-                <img src={categoryPhoto(c[3]).src} alt="" loading="lazy" />
-              </i>
-              <span>{c[0]}</span>
-            </a>
-          </li>
-        ))}
+        {categories.filter((category) => category.id !== "gift-sets").map((category) => {
+          const photo = categoryPhoto(category.id, category.imageUrl);
+          const hasPhoto = photo.src !== "/images/coffee-hero.jpg";
+          return (
+            <li key={category.id}>
+              <a className="cat" href="#best" onClick={() => onPick(category.id)}>
+                <i style={hasPhoto ? undefined : { background: `${category.color || "#9db18a"}33` }}>
+                  {hasPhoto ? (
+                    <img src={photo.src} alt="" loading="lazy" />
+                  ) : (
+                    <span aria-hidden="true">{category.emoji || "🌿"}</span>
+                  )}
+                </i>
+                <span>{category.name}</span>
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { P } from "../data.js";
+import { useCatalog } from "./catalog.jsx";
 import { brand } from "../config.js";
 const Ctx = createContext();
 export const useCart = () => useContext(Ctx);
 export function CartProvider({ children }) {
+  const { products } = useCatalog();
   const [lines, setLines] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("zee-cart") || "[]");
@@ -26,7 +27,7 @@ export function CartProvider({ children }) {
         : [...l, { id, q: 1 }],
     );
   const items = lines
-    .map((l) => ({ ...l, p: P.find((x) => x.id === l.id) }))
+    .map((l) => ({ ...l, p: products.find((x) => x.id === l.id) }))
     .filter((i) => i.p);
   const sub = items.reduce((s, i) => s + i.p.p * i.q, 0),
     ship = sub ? brand.shippingFee : 0;

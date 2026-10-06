@@ -10,7 +10,7 @@ import {
 import { money, brand } from "../config.js";
 import { useAuth } from "../context/auth.jsx";
 import { useWishlist } from "../context/wishlist.jsx";
-import { P } from "../data.js";
+import { useCatalog } from "../context/catalog.jsx";
 import { pakistanLocations } from "../data/pakistanLocations.js";
 import SignInModal from "./SignInModal.jsx";
 import ProductCard from "./ProductCard.jsx";
@@ -31,6 +31,7 @@ const formatOrderDate = (createdAt) => {
 };
 
 export default function AccountPage() {
+  const { products } = useCatalog();
   const { user, loading } = useAuth();
   const { ids: wishlistIds, error: wishlistError, ready } = useWishlist();
   const [section, setSection] = useState("orders");
@@ -119,7 +120,7 @@ export default function AccountPage() {
   if (loading) return <main className="wrap account-page">Loading...</main>;
   if (!user) return <main className="wrap account-page"><section className="account-card"><h1>Sign in to view account</h1><button className="btn" onClick={() => setSignInOpen(true)}>Sign in / Sign up</button></section><SignInModal open={signInOpen} onClose={closeSignIn} onSuccess={closeSignIn} /></main>;
 
-  const savedProducts = P.filter(p => wishlistIds.includes(p.id));
+  const savedProducts = products.filter(p => wishlistIds.includes(p.id));
   const hasDeliveryAddress = Boolean(deliveryInfo?.province || deliveryInfo?.city);
   const cancelProfileEdit = () => { setDeliveryInfo(savedDeliveryInfo); setEditingProfile(false); };
   const cities = deliveryInfo?.province? pakistanLocations[deliveryInfo.province] || [] : [];

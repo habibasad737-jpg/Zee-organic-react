@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { P } from "../data.js";
+import { useCatalog } from "../context/catalog.jsx";
 import ProductCard from "./ProductCard.jsx";
 export default function BestSellers({ q, setQ }) {
+  const { products } = useCatalog();
   const [sort, setSort] = useState("f"),
     s = q.toLowerCase().trim();
-  const source = s ? P : P.slice(0, 8);
+  const source = s ? products : products.slice(0, 8);
   const list = source
     .filter((p) => {
       const text = `${p.n} ${p.d} ${p.cat}`.toLowerCase();
