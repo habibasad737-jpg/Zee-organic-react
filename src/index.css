@@ -96,10 +96,17 @@ header {
   background: rgb(44 150 91 / 52%);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--sand);
-  transition: box-shadow 0.25s;
+  transition:
+    box-shadow 0.25s,
+    transform 0.25s ease;
 }
 header.stuck {
   box-shadow: 0 10px 28px rgba(27, 90, 54, 0.08);
+}
+@media (max-width: 767px) {
+  header.header-hidden {
+    transform: translateY(-105%);
+  }
 }
 .bar {
   display: flex;
@@ -1059,6 +1066,10 @@ footer small {
   }
   .shop-tools {
     flex-direction: column;
+  }
+  .shop-tools input {
+    flex: 0 0 46px;
+    height: 46px;
   }
   .shop-tools select {
     min-height: 44px;

@@ -12,18 +12,36 @@ const nav = [
 export default function Header() {
   const [menu, setMenu] = useState(false),
     [stuck, setStuck] = useState(false),
+    [hidden, setHidden] = useState(false),
     c = useCart();
   const { user } = useAuth();
   const isShopPage = window.location.pathname.replace(/\/+$/, "") === "/shop";
   useEffect(() => {
-    const f = () => setStuck(scrollY > 40);
+    let previousY = window.scrollY;
+    const f = () => {
+      const currentY = window.scrollY;
+      setStuck(currentY > 40);
+      if (
+        !window.matchMedia("(max-width: 767px)").matches ||
+        currentY <= 40 ||
+        menu
+      ) {
+        setHidden(false);
+      } else if (Math.abs(currentY - previousY) >= 3) {
+        setHidden(currentY > previousY && currentY > 120);
+      }
+      previousY = currentY;
+    };
     f();
     addEventListener("scroll", f, { passive: true });
     return () => removeEventListener("scroll", f);
-  }, []);
+  }, [menu]);
   return (
     <>
-      <header id="hd" className={stuck ? "stuck" : ""}>
+      <header
+        id="hd"
+        className={`${stuck ? "stuck" : ""}${hidden ? " header-hidden" : ""}`}
+      >
         <div className="wrap">
           <div className="bar">
             <a
