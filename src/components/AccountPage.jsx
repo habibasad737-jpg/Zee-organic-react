@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { sendPasswordResetEmail, signOut, updateProfile } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { auth, db } from "../firebase.js";
 import {
   loadDeliveryInfo,
@@ -18,7 +27,7 @@ import ProductCard from "./ProductCard.jsx";
 const sections = [
   ["profile", "Manage My Account", "☺"],
   ["orders", "My Orders", "▱"],
-  ["wishlist", "My Wishlist & Followed Stores", "♡"],
+  ["wishlist", "My Wishlist", "♡"],
   ["reviews", "My Reviews", "☆"],
   ["returns", "My Returns & Cancellations", "×"],
 ];
@@ -29,6 +38,11 @@ const formatOrderDate = (createdAt) => {
    ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date)
     : "Date unavailable";
 };
+
+const isDeliveredOrder = (order) => order.status === "delivered";
+const canCancelOrder = (order) =>
+  ["pending", "processing", "shipped"].includes(order.status);
+const canReturnOrder = (order) => isDeliveredOrder(order);
 
 export default function AccountPage() {
   const { products } = useCatalog();
@@ -45,6 +59,13 @@ export default function AccountPage() {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState("");
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState("");
+  const [reviewDrafts, setReviewDrafts] = useState({});
+  const [savingReviewKey, setSavingReviewKey] = useState("");
+  const [orderActionError, setOrderActionError] = useState("");
+  const [busyOrderActionId, setBusyOrderActionId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -81,23 +102,144 @@ export default function AccountPage() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || section!== "orders") return;
+    if (
+      !user ||
+      (section !== "orders" && section !== "reviews" && section !== "returns")
+    ) {
+      return;
+    }
     let active = true;
-    const loadOrders = async () => {
-      setOrdersLoading(true); setOrdersError("");
+    const loadAccountPurchases = async () => {
+      setOrdersLoading(true);
+      setReviewsLoading(true);
+      setOrdersError("");
+      setReviewsError("");
+      const ordersQuery = query(
+        collection(db, "orders"),
+        where("userId", "==", user.uid),
+      );
       try {
-        const q = query(collection(db, "orders"), where("userId", "==", user.uid));
-        const snap = await getDocs(q);
+        const snap = await getDocs(ordersQuery);
         if (!active) return;
-        const list = snap.docs.map(d => ({ id: d.id,...d.data() }));
-        list.sort((a,b) => (b.createdAt?.toMillis?.()??0) - (a.createdAt?.toMillis?.()??0));
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        list.sort(
+          (a, b) =>
+            (b.createdAt?.toMillis?.() ?? 0) -
+            (a.createdAt?.toMillis?.() ?? 0),
+        );
         setOrders(list);
-      } catch (e) { if (active) setOrdersError("We couldn't load your orders."); }
-      finally { if (active) setOrdersLoading(false); }
+      } catch (loadError) {
+        console.error("Unable to load customer orders.", loadError);
+        if (active) setOrdersError("We couldn't load your orders.");
+      } finally {
+        if (active) setOrdersLoading(false);
+      }
+
+      const reviewsQuery = query(
+        collection(db, "reviews"),
+        where("userId", "==", user.uid),
+      );
+      try {
+        const snap = await getDocs(reviewsQuery);
+        if (!active) return;
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        list.sort(
+          (a, b) =>
+            (b.createdAt?.toMillis?.() ?? 0) -
+            (a.createdAt?.toMillis?.() ?? 0),
+        );
+        setReviews(list);
+      } catch (loadError) {
+        console.error("Unable to load customer reviews.", loadError);
+        if (active) {
+          setReviewsError("We couldn't load your reviews. Please try again.");
+        }
+      } finally {
+        if (active) setReviewsLoading(false);
+      }
     };
-    loadOrders();
+    loadAccountPurchases();
     return () => { active = false; };
   }, [section, user]);
+
+  const submitReview = async (order, item) => {
+    const reviewKey = `${order.id}_${item.id}`;
+    const draft = reviewDrafts[reviewKey];
+    const comment = draft?.comment?.trim() || "";
+    if (!draft?.rating || !comment) {
+      setReviewsError("Choose a star rating and write a review before submitting.");
+      return;
+    }
+
+    setSavingReviewKey(reviewKey);
+    setReviewsError("");
+    const review = {
+      userId: user.uid,
+      userName: (user.displayName || "Verified customer").slice(0, 100),
+      orderId: order.id,
+      productId: item.id,
+      productName: item.name,
+      purchaseItem: {
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        qty: item.qty,
+      },
+      rating: draft.rating,
+      comment,
+      createdAt: new Date(),
+    };
+    try {
+      await setDoc(doc(db, "reviews", reviewKey), {
+        ...review,
+        createdAt: serverTimestamp(),
+      });
+      setReviews((current) => [...current, review]);
+    } catch (saveError) {
+      console.error("Unable to submit product review.", saveError);
+      setReviewsError(
+        saveError?.code === "permission-denied"
+          ? "Reviews can only be submitted for delivered orders. Please check your Firestore rules."
+          : "We couldn't submit your review. Please try again.",
+      );
+    } finally {
+      setSavingReviewKey("");
+    }
+  };
+
+  const updateCustomerOrderStatus = async (order, status) => {
+    if (busyOrderActionId) return;
+    const actionLabel = status === "cancelled" ? "cancel" : "return";
+    if (
+      !window.confirm(
+        `Are you sure you want to ${actionLabel} order #${order.id
+          .slice(0, 8)
+          .toUpperCase()}?`,
+      )
+    ) {
+      return;
+    }
+
+    setBusyOrderActionId(order.id);
+    setOrderActionError("");
+    try {
+      await updateDoc(doc(db, "orders", order.id), { status });
+      setOrders((current) =>
+        current.map((item) =>
+          item.id === order.id ? { ...item, status } : item,
+        ),
+      );
+    } catch (actionError) {
+      console.error(`Unable to ${actionLabel} customer order.`, actionError);
+      setOrderActionError(
+        actionError?.code === "permission-denied"
+          ? "This order can no longer be changed. Refresh your orders and try again."
+          : `We couldn't ${actionLabel} this order. Please try again.`,
+      );
+    } finally {
+      setBusyOrderActionId("");
+    }
+  };
 
   const saveDeliveryInfo = async (e) => {
     e.preventDefault(); setMessage(""); setError("");
@@ -171,6 +313,7 @@ export default function AccountPage() {
           {section==="orders" && (
             <>
               <p className="product-category">Purchases & Invoices</p><h2>My Orders - Invoice</h2>
+              {orderActionError && <p style={{ color: "salmon" }}>{orderActionError}</p>}
               {ordersLoading? <p>Loading orders...</p> : orders.length? (
                 <div>
                   {orders.map(order=>(
@@ -192,6 +335,38 @@ export default function AccountPage() {
                         <button className="btn" onClick={()=>setSelectedInvoice(order)}>🧾 View / Print Invoice</button>
                         <button className="btn o" onClick={()=>window.open(`https://one.instaworld.pk/`, '_blank')}>Track on Insta World</button>
                       </div>
+                      {(canCancelOrder(order) || canReturnOrder(order)) && (
+                        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                          {canCancelOrder(order) && (
+                            <button
+                              className="btn o"
+                              type="button"
+                              disabled={busyOrderActionId === order.id}
+                              onClick={() =>
+                                updateCustomerOrderStatus(order, "cancelled")
+                              }
+                            >
+                              {busyOrderActionId === order.id
+                                ? "Updating..."
+                                : "Cancel order"}
+                            </button>
+                          )}
+                          {canReturnOrder(order) && (
+                            <button
+                              className="btn o"
+                              type="button"
+                              disabled={busyOrderActionId === order.id}
+                              onClick={() =>
+                                updateCustomerOrderStatus(order, "returned")
+                              }
+                            >
+                              {busyOrderActionId === order.id
+                                ? "Updating..."
+                                : "Return order"}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
@@ -200,8 +375,180 @@ export default function AccountPage() {
           )}
 
           {section==="wishlist" && <><h2>My Wishlist</h2>{!ready? <p>Loading...</p> : savedProducts.length? <div className="grid">{savedProducts.map(p=><ProductCard key={p.id} p={p} />)}</div> : <p>Empty</p>}</>}
-          {section==="reviews" && <><h2>My Reviews</h2><p>No reviews yet</p></>}
-          {section==="returns" && <><h2>Returns</h2><p>No returns</p></>}
+          {section==="reviews" && (
+            <>
+              <h2>My Reviews</h2>
+              <p>
+                Review a product after its order has been marked as delivered.
+                Your name and review will be published on the product page.
+              </p>
+              {reviewsLoading ? (
+                <p>Loading reviews...</p>
+              ) : reviewsError ? (
+                <p style={{ color: "salmon" }}>{reviewsError}</p>
+              ) : ordersLoading ? (
+                <p>Loading delivered orders...</p>
+              ) : (
+                <>
+                  {ordersError && <p style={{ color: "salmon" }}>{ordersError}</p>}
+                  {orders.flatMap((order) => {
+                    if (!isDeliveredOrder(order)) return [];
+                    return (order.items || []).map((item) => {
+                      const reviewKey = `${order.id}_${item.id}`;
+                      const savedReview = reviews.find(
+                        (review) => review.id === reviewKey,
+                      );
+                      const draft = reviewDrafts[reviewKey] || {
+                        rating: 5,
+                        comment: "",
+                      };
+                      return (
+                        <article className="account-order" key={reviewKey}>
+                          <h3 style={{ color: "#a3e635" }}>{item.name}</h3>
+                          <p>
+                            Delivered with order #
+                            {order.id.slice(0, 8).toUpperCase()}
+                          </p>
+                          {savedReview ? (
+                            <div>
+                              <p aria-label={`${savedReview.rating} out of 5 stars`}>
+                                {"★".repeat(savedReview.rating)}
+                                {"☆".repeat(5 - savedReview.rating)}
+                              </p>
+                              <p>{savedReview.comment}</p>
+                              <small>Review submitted</small>
+                            </div>
+                          ) : (
+                            <form
+                              onSubmit={(event) => {
+                                event.preventDefault();
+                                submitReview(order, item);
+                              }}
+                            >
+                              <label>
+                                Your rating
+                                <select
+                                  value={draft.rating}
+                                  onChange={(event) =>
+                                    setReviewDrafts((current) => ({
+                                      ...current,
+                                      [reviewKey]: {
+                                        ...draft,
+                                        rating: Number(event.target.value),
+                                      },
+                                    }))
+                                  }
+                                >
+                                  {[5, 4, 3, 2, 1].map((rating) => (
+                                    <option key={rating} value={rating}>
+                                      {rating} star{rating === 1 ? "" : "s"}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <label style={{ display: "block", margin: "12px 0" }}>
+                                Your review
+                                <textarea
+                                  value={draft.comment}
+                                  maxLength={1000}
+                                  required
+                                  rows={4}
+                                  onChange={(event) =>
+                                    setReviewDrafts((current) => ({
+                                      ...current,
+                                      [reviewKey]: {
+                                        ...draft,
+                                        comment: event.target.value,
+                                      },
+                                    }))
+                                  }
+                                  placeholder="How was your experience with this product?"
+                                />
+                              </label>
+                              <button
+                                className="btn"
+                                type="submit"
+                                disabled={savingReviewKey === reviewKey}
+                              >
+                                {savingReviewKey === reviewKey
+                                  ? "Submitting..."
+                                  : "Submit review"}
+                              </button>
+                            </form>
+                          )}
+                        </article>
+                      );
+                    });
+                  })}
+                  {!ordersError && !orders.some(isDeliveredOrder) && (
+                    <p>
+                      No delivered products are ready for review yet. You can
+                      submit a review here after an order is marked delivered.
+                    </p>
+                  )}
+                </>
+              )}
+            </>
+          )}
+          {section==="returns" && (
+            <>
+              <h2>My Returns &amp; Cancellations</h2>
+              <p>
+                Orders you have returned or cancelled will appear here.
+              </p>
+              {orderActionError && <p style={{ color: "salmon" }}>{orderActionError}</p>}
+              {ordersLoading ? (
+                <p>Loading returns and cancellations...</p>
+              ) : ordersError ? (
+                <p style={{ color: "salmon" }}>{ordersError}</p>
+              ) : orders.filter((order) =>
+                  ["returned", "cancelled"].includes(order.status),
+                ).length ? (
+                orders
+                  .filter((order) =>
+                    ["returned", "cancelled"].includes(order.status),
+                  )
+                  .map((order) => (
+                    <article className="account-order" key={order.id}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <div>
+                          <h3 style={{ color: "#a3e635" }}>
+                            Order #{order.id.slice(0, 8).toUpperCase()}
+                          </h3>
+                          <p>{formatOrderDate(order.createdAt)}</p>
+                        </div>
+                        <span
+                          style={{
+                            background: order.status === "returned" ? "#facc15" : "#fca5a5",
+                            color: "#000",
+                            padding: "4px 10px",
+                            borderRadius: 20,
+                            height: "fit-content",
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {order.status === "returned" ? "Returned" : "Cancelled"}
+                        </span>
+                      </div>
+                      <ul style={{ marginTop: 12 }}>
+                        {(order.items || []).map((item, index) => (
+                          <li
+                            className="invoice-line"
+                            key={`${item.id || item.name}-${index}`}
+                          >
+                            <span>{item.name} × {item.qty}</span>
+                            <span>{money(item.price * item.qty)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </article>
+                  ))
+              ) : (
+                <p>No returned or cancelled orders yet.</p>
+              )}
+            </>
+          )}
           {message && <p style={{color:'lightgreen'}}>{message}</p>}
           {error && <p style={{color:'salmon'}}>{error}</p>}
         </section>

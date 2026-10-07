@@ -1301,6 +1301,34 @@ footer small {
   font-size: 13px;
   opacity: 0.72;
 }
+.product-review-list {
+  display: grid;
+  gap: 12px;
+}
+.product-review-card {
+  padding: 18px;
+  border: 1px solid var(--sand);
+  border-radius: 16px;
+  background: var(--tint2);
+}
+.product-review-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.product-review-card-heading span {
+  color: #c28a24;
+  letter-spacing: 0.08em;
+}
+.product-review-card-heading small,
+.product-review-card > small {
+  opacity: 0.7;
+}
+.product-review-card p {
+  margin: 12px 0 8px;
+  white-space: pre-wrap;
+}
 .product-review-empty {
   padding: 24px;
   border-radius: 16px;

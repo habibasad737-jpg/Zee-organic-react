@@ -24,11 +24,66 @@
         || (request.auth.token.email == "khansher7377@gmail.com"
           && request.auth.token.email_verified == true));
     allow update: if request.auth != null
-      && request.auth.token.email == "khansher7377@gmail.com"
-      && request.auth.token.email_verified == true
-      && request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(["status", "instaTracking"]);
+      && (
+        (request.auth.token.email == "khansher7377@gmail.com"
+          && request.auth.token.email_verified == true
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(["status", "instaTracking"]))
+        || (resource.data.userId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(["status"])
+          && (
+            (resource.data.status in ["pending", "processing", "shipped"]
+              && request.resource.data.status == "cancelled")
+            || (resource.data.status == "delivered"
+              && request.resource.data.status == "returned")
+          ))
+      );
     allow delete: if false;
+  }
+
+  match /reviews/{reviewId} {
+    allow read: if true;
+    allow create: if request.auth != null
+      && request.resource.data.keys().hasAll([
+        "userId", "userName", "orderId", "productId", "productName",
+        "purchaseItem", "rating", "comment", "createdAt"
+      ])
+      && request.resource.data.keys().hasOnly([
+        "userId", "userName", "orderId", "productId", "productName",
+        "purchaseItem", "rating", "comment", "createdAt"
+      ])
+      && request.resource.data.userId == request.auth.uid
+      && request.resource.data.userName is string
+      && request.resource.data.userName.size() <= 100
+      && request.resource.data.orderId is string
+      && request.resource.data.productId is string
+      && reviewId == request.resource.data.orderId
+        + "_" + request.resource.data.productId
+      && request.resource.data.productName
+        == request.resource.data.purchaseItem.name
+      && request.resource.data.purchaseItem.keys().hasAll([
+        "id", "name", "price", "qty"
+      ])
+      && request.resource.data.purchaseItem.keys().hasOnly([
+        "id", "name", "price", "qty"
+      ])
+      && request.resource.data.purchaseItem.id
+        == request.resource.data.productId
+      && request.resource.data.rating is int
+      && request.resource.data.rating >= 1
+      && request.resource.data.rating <= 5
+      && request.resource.data.comment is string
+      && request.resource.data.comment.size() > 0
+      && request.resource.data.comment.size() <= 1000
+      && request.resource.data.createdAt is timestamp
+      && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+        .data.userId == request.auth.uid
+      && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+        .data.status == "delivered"
+      && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+        .data.items.hasAny([request.resource.data.purchaseItem]);
+    allow update, delete: if false;
   }
 
   match /storefront/{catalogId} {
@@ -50,4 +105,6 @@
 
   The admin dashboard is available at `/admin`. Sign in with the listed administrator account and verify its email before use. Open **Products & categories** to add, edit, or remove catalog items, update prices, stock quantities and pack sizes, and manage categories. The first admin visit copies the current built-in catalog into the `storefront/catalog` Firestore document; subsequent admin changes sync to the existing storefront without changing its layout. Product and category image fields accept an existing site path or an image URL. Stock levels are managed manually and are not automatically reduced when an order is placed. Apply these Firestore rules in Firebase Console; the admin interface check alone does not grant database access. Wishlists remain stored in this browser per Firebase user and are not synced between devices.
 - Admin **Settings** stores the admin display name and contact phone in `adminProfiles/{uid}`. The sign-in email and verification status are shown from Firebase Authentication, and password reset is sent through Firebase. Add the `adminProfiles` rule above to enable profile saving.
-- Placeholders: payment collection, newsletter API and product review counts.
+- Product reviews can be submitted once per purchased item after an order is marked `delivered`. They are saved in the `reviews` collection and shown on the product page. Add the `reviews` Firestore rule above so reviews are public to read but can only be created by the owner of a delivered order containing the reviewed item.
+- Customers can cancel their own pending, processing, or shipped orders, and mark delivered orders as returned. These status changes appear under **My Returns & Cancellations**. The `/orders/{orderId}` update rule above permits only these customer status transitions while retaining admin fulfilment updates.
+- Placeholders: payment collection and newsletter API.

@@ -1,17 +1,29 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { productPhoto } from "../art.js";
 import { money } from "../config.js";
+import { db } from "../firebase.js";
 import { useCatalog } from "../context/catalog.jsx";
 import { useCart } from "../context/cart.jsx";
 import { useAuth } from "../context/auth.jsx";
 import ProductCard from "./ProductCard.jsx";
 import SignInModal from "./SignInModal.jsx";
 
+const formatReviewDate = (createdAt) => {
+  const date = createdAt?.toDate?.() || createdAt;
+  return date instanceof Date && !Number.isNaN(date.getTime())
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date)
+    : "";
+};
+
 export default function ProductPage({ product }) {
   const { categories, products } = useCatalog();
   const { change, setOpen } = useCart();
   const { user } = useAuth();
   const [signInOpen, setSignInOpen] = useState(false);
+  const [customerReviews, setCustomerReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState("");
   const closeSignIn = useCallback(() => setSignInOpen(false), []);
   const categoryName =
     categories.find((item) => item.id === product.cat)?.name ||
@@ -23,6 +35,48 @@ export default function ProductPage({ product }) {
     ? Math.round((1 - product.p / product.o) * 100)
     : 0;
   const image = productPhoto(product);
+  const averageRating = customerReviews.length
+    ? customerReviews.reduce((sum, review) => sum + review.rating, 0) /
+      customerReviews.length
+    : 0;
+
+  useEffect(() => {
+    let active = true;
+    const loadReviews = async () => {
+      setReviewsLoading(true);
+      setReviewsError("");
+      setCustomerReviews([]);
+      try {
+        const reviewsQuery = query(
+          collection(db, "reviews"),
+          where("productId", "==", product.id),
+        );
+        const snapshot = await getDocs(reviewsQuery);
+        if (!active) return;
+        const list = snapshot.docs.map((reviewDoc) => ({
+          id: reviewDoc.id,
+          ...reviewDoc.data(),
+        }));
+        list.sort(
+          (first, second) =>
+            (second.createdAt?.toMillis?.() ?? 0) -
+            (first.createdAt?.toMillis?.() ?? 0),
+        );
+        setCustomerReviews(list);
+      } catch (loadError) {
+        console.error("Unable to load product reviews.", loadError);
+        if (active) {
+          setReviewsError("We couldn't load customer reviews right now.");
+        }
+      } finally {
+        if (active) setReviewsLoading(false);
+      }
+    };
+    loadReviews();
+    return () => {
+      active = false;
+    };
+  }, [product.id]);
 
   const addToCart = useCallback(() => {
     change(product.id, 1);
@@ -149,29 +203,53 @@ export default function ProductPage({ product }) {
         <section className="product-reviews" id="reviews">
           <div className="product-reviews-heading">
             <div>
-              <p className="product-category">Customer feedback</p>
+              <p className="product-category">Verified customer feedback</p>
               <h2>Reviews for {product.n}</h2>
             </div>
             <div className="product-review-summary">
-              <strong>{product.r.toFixed(1)}</strong>
-              <span aria-label={`${product.r} out of 5 stars`}>
-                {"★".repeat(Math.round(product.r))}
+              <strong>{customerReviews.length ? averageRating.toFixed(1) : "—"}</strong>
+              <span aria-label={`${averageRating.toFixed(1)} out of 5 stars`}>
+                {"★".repeat(Math.round(averageRating))}
               </span>
-              <small>{product.v} ratings</small>
+              <small>
+                {customerReviews.length} verified review
+                {customerReviews.length === 1 ? "" : "s"}
+              </small>
             </div>
           </div>
           <p className="product-review-note">
-            Rating information is demo data. Verified customer reviews will
-            appear here when available.
+            Only customers with a delivered order can submit a review.
           </p>
-          <div className="product-review-empty">
-            <span aria-hidden="true">✦</span>
-            <h3>Reviews are on their way</h3>
-            <p>
-              We don’t have verified written reviews for this product yet. Check
-              back after customers have shared their experience.
-            </p>
-          </div>
+          {reviewsLoading ? (
+            <p>Loading customer reviews...</p>
+          ) : reviewsError ? (
+            <p role="status">{reviewsError}</p>
+          ) : customerReviews.length ? (
+            <div className="product-review-list">
+              {customerReviews.map((review) => (
+                <article className="product-review-card" key={review.id}>
+                  <div className="product-review-card-heading">
+                    <strong>{review.userName || "Verified customer"}</strong>
+                    <span>
+                      {"★".repeat(review.rating)}
+                      {"☆".repeat(5 - review.rating)}
+                    </span>
+                    {formatReviewDate(review.createdAt) && (
+                      <small>{formatReviewDate(review.createdAt)}</small>
+                    )}
+                  </div>
+                  <p>{review.comment}</p>
+                  <small>Verified purchase</small>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="product-review-empty">
+              <span aria-hidden="true">✦</span>
+              <h3>No customer reviews yet</h3>
+              <p>Verified customer reviews will appear here after delivery.</p>
+            </div>
+          )}
         </section>
 
         {relatedProducts.length > 0 && (
