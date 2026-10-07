@@ -209,6 +209,13 @@ export default function AccountPage() {
 
   const updateCustomerOrderStatus = async (order, status) => {
     if (busyOrderActionId) return;
+    const isAllowedAction =
+      (status === "cancelled" && canCancelOrder(order)) ||
+      (status === "returned" && canReturnOrder(order));
+    if (!isAllowedAction) {
+      setOrderActionError("This order status no longer allows that action. Refresh your orders.");
+      return;
+    }
     const actionLabel = status === "cancelled" ? "cancel" : "return";
     if (
       !window.confirm(
@@ -229,11 +236,16 @@ export default function AccountPage() {
           item.id === order.id ? { ...item, status } : item,
         ),
       );
+      setMessage(
+        status === "cancelled"
+          ? `Order #${order.id.slice(0, 8).toUpperCase()} cancelled on the website.`
+          : `Order #${order.id.slice(0, 8).toUpperCase()} marked as returned.`,
+      );
     } catch (actionError) {
       console.error(`Unable to ${actionLabel} customer order.`, actionError);
       setOrderActionError(
         actionError?.code === "permission-denied"
-          ? "This order can no longer be changed. Refresh your orders and try again."
+          ? "Firebase did not allow this change. Check that the customer order status rules in README.md are deployed."
           : `We couldn't ${actionLabel} this order. Please try again.`,
       );
     } finally {
@@ -331,42 +343,38 @@ export default function AccountPage() {
                       <div className="invoice-line"><span>Shipping</span><span>{money(order.shipping||0)}</span></div>
                       <div className="invoice-line" style={{fontWeight:800,fontSize:16}}><span>Order total</span><span>{money(order.total||0)}</span></div>
                       <p style={{fontSize:12,opacity:0.8,marginTop:8}}>📍 {order.address? [order.address.fullName, order.address.building, order.address.area, order.address.city].filter(Boolean).join(", "):""}</p>
-                      <div style={{display:'flex',gap:8,marginTop:12}}>
+                      <div className="account-order-actions">
                         <button className="btn" onClick={()=>setSelectedInvoice(order)}>🧾 View / Print Invoice</button>
                         <button className="btn o" onClick={()=>window.open(`https://one.instaworld.pk/`, '_blank')}>Track on Insta World</button>
+                        {canCancelOrder(order) && (
+                          <button
+                            className="btn account-cancel-order"
+                            type="button"
+                            disabled={busyOrderActionId === order.id}
+                            onClick={() =>
+                              updateCustomerOrderStatus(order, "cancelled")
+                            }
+                          >
+                            {busyOrderActionId === order.id
+                              ? "Cancelling..."
+                              : "Cancel order"}
+                          </button>
+                        )}
+                        {canReturnOrder(order) && (
+                          <button
+                            className="btn o"
+                            type="button"
+                            disabled={busyOrderActionId === order.id}
+                            onClick={() =>
+                              updateCustomerOrderStatus(order, "returned")
+                            }
+                          >
+                            {busyOrderActionId === order.id
+                              ? "Updating..."
+                              : "Return order"}
+                          </button>
+                        )}
                       </div>
-                      {(canCancelOrder(order) || canReturnOrder(order)) && (
-                        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                          {canCancelOrder(order) && (
-                            <button
-                              className="btn o"
-                              type="button"
-                              disabled={busyOrderActionId === order.id}
-                              onClick={() =>
-                                updateCustomerOrderStatus(order, "cancelled")
-                              }
-                            >
-                              {busyOrderActionId === order.id
-                                ? "Updating..."
-                                : "Cancel order"}
-                            </button>
-                          )}
-                          {canReturnOrder(order) && (
-                            <button
-                              className="btn o"
-                              type="button"
-                              disabled={busyOrderActionId === order.id}
-                              onClick={() =>
-                                updateCustomerOrderStatus(order, "returned")
-                              }
-                            >
-                              {busyOrderActionId === order.id
-                                ? "Updating..."
-                                : "Return order"}
-                            </button>
-                          )}
-                        </div>
-                      )}
                     </article>
                   ))}
                 </div>

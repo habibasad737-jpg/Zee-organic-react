@@ -3,7 +3,7 @@ import { sendEmailVerification, signOut } from "firebase/auth";
 import {
   collection,
   doc,
-  getDocs,
+  onSnapshot,
   updateDoc,
 } from "firebase/firestore";
 import { auth, db } from "../firebase.js";
@@ -72,31 +72,38 @@ export default function AdminPage() {
   const [busyOrderId, setBusyOrderId] = useState("");
   const [busyAction, setBusyAction] = useState(false);
 
-  const loadOrders = async () => {
+  useEffect(() => {
+    if (!isAdmin || !user?.emailVerified) return;
+
     setOrdersLoading(true);
     setError("");
-    try {
-      const snapshot = await getDocs(collection(db, "orders"));
-      const list = snapshot.docs.map((orderDoc) => ({
-        id: orderDoc.id,
-        ...orderDoc.data(),
-      }));
-      list.sort(
-        (first, second) =>
-          (second.createdAt?.toMillis?.() ?? 0) -
-          (first.createdAt?.toMillis?.() ?? 0),
-      );
-      setOrders(list);
-    } catch (loadError) {
-      console.error("Unable to load admin orders.", loadError);
-      setError(firebaseError(loadError));
-    } finally {
-      setOrdersLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isAdmin && user.emailVerified) loadOrders();
+    const unsubscribe = onSnapshot(
+      collection(db, "orders"),
+      (snapshot) => {
+        const list = snapshot.docs.map((orderDoc) => ({
+          id: orderDoc.id,
+          ...orderDoc.data(),
+        }));
+        list.sort(
+          (first, second) =>
+            (second.createdAt?.toMillis?.() ?? 0) -
+            (first.createdAt?.toMillis?.() ?? 0),
+        );
+        setOrders(list);
+        setSelectedOrder((current) =>
+          current
+            ? list.find((order) => order.id === current.id) || current
+            : current,
+        );
+        setOrdersLoading(false);
+      },
+      (loadError) => {
+        console.error("Unable to watch admin orders.", loadError);
+        setError(firebaseError(loadError));
+        setOrdersLoading(false);
+      },
+    );
+    return unsubscribe;
   }, [isAdmin, user?.emailVerified]);
 
   useEffect(() => {
