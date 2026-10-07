@@ -12,6 +12,7 @@
   --tint: #edf8ea;
   --tint2: #f5faf2;
   --onforest: #f6faf3;
+  --section-space: clamp(32px, 4vw, 52px);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -283,7 +284,8 @@ nav.d a:hover {
 .hero {
   display: grid;
   gap: 28px;
-  padding: 32px 0 40px;
+  padding-block: var(--section-space);
+  padding-inline: 0;
   align-items: center;
 }
 .hero h1 {
@@ -340,7 +342,8 @@ nav.d a:hover {
   object-position: center;
 }
 section.s {
-  padding: 32px 0;
+  padding-block: var(--section-space);
+  padding-inline: 0;
 }
 h2 {
   font-size: clamp(26px, 4vw, 34px);
@@ -598,6 +601,7 @@ h2 {
 }
 .story p {
   max-width: 480px;
+  margin: 12px 0 0;
   color: rgba(255, 255, 255, 0.92);
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.22);
 }
@@ -677,10 +681,13 @@ h2 {
   margin: 8px 0 0;
   font-size: 14px;
 }
+#msg:empty {
+  margin-top: 0;
+}
 footer {
   background: linear-gradient(180deg, #173d25, #1e4d2b);
   color: #e6eed4;
-  margin-top: 40px;
+  margin-top: 0;
   font-size: 14px;
 }
 footer .serif {
@@ -918,7 +925,8 @@ footer small {
 .band {
   position: relative;
   isolation: isolate;
-  padding: 44px 0;
+  padding-block: var(--section-space);
+  padding-inline: 0;
   margin: 16px 0;
 }
 .band::before {
@@ -972,13 +980,9 @@ footer small {
   border-radius: 999px;
   padding: 6px 12px;
 }
-@media (min-width: 768px) {
-  .band {
-    padding: 56px 0;
-  }
-}
 .shop-intro {
-  padding: 56px 0 48px;
+  padding-block: clamp(40px, 5vw, 56px);
+  padding-inline: 0;
   background:
     radial-gradient(
       circle at 85% 18%,
@@ -1017,8 +1021,7 @@ footer small {
   font-size: 13px;
 }
 .shop-catalog {
-  padding-top: 30px;
-  padding-bottom: 64px;
+  padding-block: var(--section-space);
 }
 .shop-tools {
   display: flex;
@@ -1082,7 +1085,7 @@ footer small {
 }
 @media (max-width: 520px) {
   .shop-intro {
-    padding: 42px 0 36px;
+    padding-block: 40px;
   }
   .shop-tools {
     flex-direction: column;
@@ -1130,7 +1133,8 @@ footer small {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: start;
   gap: clamp(28px, 6vw, 72px);
-  padding: 8px 0 56px;
+  padding-block: var(--section-space);
+  padding-inline: 0;
 }
 .product-detail-art {
   position: sticky;
@@ -1285,7 +1289,7 @@ footer small {
   opacity: 0.8;
 }
 .product-reviews {
-  padding: 32px;
+  padding: clamp(24px, 4vw, 32px);
   border: 1px solid var(--sand);
   border-radius: 24px;
   background: var(--card);
@@ -1377,7 +1381,8 @@ footer small {
   opacity: 0.75;
 }
 .related-products {
-  padding: 48px 0 64px;
+  padding-block: var(--section-space);
+  padding-inline: 0;
 }
 .product-not-found {
   min-height: 55vh;
@@ -1394,7 +1399,7 @@ footer small {
   .product-detail {
     grid-template-columns: 1fr;
     gap: 24px;
-    padding-bottom: 36px;
+    padding-block: 40px;
   }
   .product-detail-art {
     position: static;
@@ -1638,8 +1643,7 @@ footer small {
   min-height: 58vh;
   display: grid;
   place-items: center;
-  padding-top: 44px;
-  padding-bottom: 56px;
+  padding-block: var(--section-space);
 }
 .account-card {
   width: min(100%, 640px);
@@ -1676,8 +1680,7 @@ footer small {
 }
 .account-dashboard {
   min-height: 62vh;
-  padding-top: 42px;
-  padding-bottom: 64px;
+  padding-block: var(--section-space);
 }
 .account-welcome {
   display: flex;
@@ -2182,7 +2185,7 @@ footer small {
     font-size: 12px;
   }
   .account-dashboard {
-    padding-top: 24px;
+    padding-block: 32px;
   }
   .account-welcome {
     align-items: flex-start;
@@ -2452,7 +2455,7 @@ footer small {
   gap: 22px;
   max-width: 1500px;
   margin: 0 auto;
-  padding: clamp(18px, 3vw, 34px) clamp(16px, 4vw, 48px) 48px;
+  padding: clamp(24px, 4vw, 40px) clamp(16px, 4vw, 48px);
 }
 .admin-welcome {
   display: flex;
@@ -2941,7 +2944,7 @@ footer small {
     font-size: 20px;
   }
   .admin-content {
-    padding: 18px 12px 32px;
+    padding: 20px 12px;
   }
   .admin-welcome {
     align-items: flex-start;
