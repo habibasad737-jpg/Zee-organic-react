@@ -190,7 +190,9 @@ export default function CartDrawer() {
     } catch (error) {
       console.error("Unable to place the order.", error);
       setCheckoutError(
-        error.message || "Unable to place the order. Please try again.",
+        error?.code === "permission-denied"
+          ? "Firebase blocked this order. Deploy the Firestore rules with `firebase deploy --only firestore:rules`, then try again."
+          : error.message || "Unable to place the order. Please try again.",
       );
     } finally {
       setSubmitting(false);

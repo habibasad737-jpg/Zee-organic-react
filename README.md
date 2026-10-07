@@ -13,7 +13,13 @@
   }
   ```
 
-  Add this match inside the existing `/databases/{database}/documents` rules block without replacing the rest of your rules. Orders are saved in the `orders` collection when checkout is completed. To allow customers to read only their own orders and the verified administrator to read all orders and update only fulfilment status/tracking, add this match to the same rules block:
+  Orders are saved in the `orders` collection when checkout is completed. This repository includes the complete rules in `database/firestore.rules`, configured for the `zee-organic` project in `firebase.json` and `.firebaserc`. Deploy them from the project root using the Firebase CLI:
+
+  ```sh
+  firebase deploy --only firestore:rules
+  ```
+
+  If you maintain rules in Firebase Console instead, check that signed-in customers can create orders with their own `userId` and read only their own orders. The order rule should include:
 
   ```text
   match /orders/{orderId} {
