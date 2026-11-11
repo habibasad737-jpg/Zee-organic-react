@@ -33,7 +33,7 @@ export default function AdminSettingsPage({ user }) {
         if (active) {
           setError(
             loadError.code === "permission-denied"
-              ? "Firebase denied profile access. Add the admin profile rule described in README.md."
+              ? "Firestore denied profile access. Deploy database/firestore.rules with `firebase deploy --only firestore:rules` and confirm you are signed in with the verified administrator account."
               : loadError.message || "Unable to load admin settings.",
           );
         }
@@ -70,7 +70,7 @@ export default function AdminSettingsPage({ user }) {
       console.error("Unable to save admin settings.", saveError);
       setError(
         saveError.code === "permission-denied"
-          ? "Firebase denied profile access. Add the admin profile rule described in README.md."
+          ? "Firestore denied profile access. Deploy database/firestore.rules with `firebase deploy --only firestore:rules` and confirm you are signed in with the verified administrator account."
           : saveError.message || "Unable to save admin settings.",
       );
     } finally {

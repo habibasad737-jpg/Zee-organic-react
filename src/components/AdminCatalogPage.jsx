@@ -61,7 +61,7 @@ export default function AdminCatalogPage() {
         if (active) {
           setError(
             initializeError.code === "permission-denied"
-              ? "Firebase denied catalog access. Add the catalog rule described in README.md."
+              ? "Firestore denied catalog access. Deploy database/firestore.rules with `firebase deploy --only firestore:rules` and confirm you are signed in with the verified administrator account."
               : initializeError.message || "Unable to initialize the catalog.",
           );
         }
@@ -99,7 +99,7 @@ export default function AdminCatalogPage() {
       console.error("Unable to save catalog changes.", saveError);
       setError(
         saveError.code === "permission-denied"
-          ? "Firebase denied catalog access. Add the catalog rule described in README.md."
+          ? "Firestore denied catalog access. Deploy database/firestore.rules with `firebase deploy --only firestore:rules` and confirm you are signed in with the verified administrator account."
           : saveError.message || "Unable to save catalog changes.",
       );
       return false;

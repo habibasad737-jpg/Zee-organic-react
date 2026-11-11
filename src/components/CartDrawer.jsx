@@ -8,26 +8,33 @@ import {
   saveDeliveryInfo,
 } from "../accountProfile.js";
 import { db } from "../firebase.js";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { pakistanLocations } from "../data/pakistanLocations.js";
 
 // --- INSTA WORLD FUNCTION ---
 async function createInstaWorldParcel(orderData) {
   try {
+    const addressStr = typeof orderData.address === "string"
+      ? orderData.address
+      : [orderData.address?.building, orderData.address?.area, orderData.address?.locality, orderData.address?.city, orderData.address?.province].filter(Boolean).join(", ");
+
     const payload = {
       customer_name: orderData.customerName || orderData.name,
       customer_phone: orderData.phone,
-      customer_address: `${orderData.address?.building || ''}, ${orderData.address?.area || ''}, ${orderData.address?.city || ''}`,
-      customer_city: orderData.address?.city,
-      customer_province: orderData.address?.province,
+      customer_email: orderData.email || "",
+      customer_address: addressStr,
+      customer_city: orderData.city || orderData.address?.city,
+      customer_province: orderData.province || orderData.address?.province,
       cod_amount: orderData.total,
-      order_id: orderData.orderId || Date.now().toString(),
+      order_id: orderData.orderId,
+      items: orderData.items || [],
       pieces: orderData.count?.toString() || "1",
+      apiKey: instaWorld.apiKey,
     };
 
-    console.log("Sending via proxy:", payload);
+    console.log("Sending to InstaWorld proxy:", payload);
 
-    const res = await fetch('/api/create-shipment', {
+    const res = await fetch(instaWorld.apiUrl || '/api/create-shipment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -35,15 +42,10 @@ async function createInstaWorldParcel(orderData) {
 
     const result = await res.json();
     console.log("Insta World Response:", result);
-    
-    if (!res.ok) {
-      console.error("Insta failed:", result);
-      return null;
-    }
     return result;
 
   } catch (err) {
-    console.log("Insta World Error:", err);
+    console.error("Insta World Error:", err);
     return null;
   }
 }
@@ -140,45 +142,65 @@ export default function CartDrawer() {
         profileSaveFailed = true;
       }
 
-      // 1. Save to Firebase
-      const orderRef = await addDoc(collection(db, "orders"), {
+      // 1. Prepare Order and Send to InstaWorld Courier
+      const newOrderRef = doc(collection(db, "orders"));
+      const orderId = newOrderRef.id;
+
+      const fullAddressString = [
+        orderDeliveryInfo.building,
+        orderDeliveryInfo.area,
+        orderDeliveryInfo.locality,
+        orderDeliveryInfo.address,
+        orderDeliveryInfo.city,
+        orderDeliveryInfo.province,
+      ].filter(Boolean).join(", ");
+
+      const orderItems = c.items.map(({ p, q }) => ({
+        id: p.id,
+        name: p.n,
+        price: p.p,
+        qty: q,
+      }));
+
+      const instaResult = await createInstaWorldParcel({
+        orderId,
+        customerName: orderDeliveryInfo.fullName,
+        phone: orderDeliveryInfo.phone,
+        email: user.email || "",
+        address: fullAddressString,
+        city: orderDeliveryInfo.city,
+        province: orderDeliveryInfo.province,
+        items: orderItems,
+        total: c.total,
+        count: c.count,
+      });
+
+      const trackingNumber = instaResult?.tracking_number || null;
+
+      // 2. Save Order to Firestore (with InstaWorld tracking if available)
+      await setDoc(newOrderRef, {
         userId: user.uid,
         email: user.email || "",
         customerName: orderDeliveryInfo.fullName,
         phone: orderDeliveryInfo.phone,
         address: orderDeliveryInfo,
-        items: c.items.map(({ p, q }) => ({
-          id: p.id,
-          name: p.n,
-          price: p.p,
-          qty: q,
-        })),
+        items: orderItems,
         subtotal: c.sub,
         shipping: c.ship,
         total: c.total,
         count: c.count,
         status: "pending",
+        instaTracking: trackingNumber,
         createdAt: serverTimestamp(),
-      });
-      // 2. SEND TO INSTA WORLD COURIER - FIXED CODE!
-      const instaResult = await createInstaWorldParcel({
-        customerName: orderDeliveryInfo.fullName,
-        phone: orderDeliveryInfo.phone,
-        address: `${orderDeliveryInfo.building}, ${orderDeliveryInfo.area}, ${orderDeliveryInfo.city}, ${orderDeliveryInfo.province}`,
-        city: orderDeliveryInfo.city,
-        items: c.items.map(({ p, q }) => ({ name: p.n, qty: q })),
-        total: c.total,
-        count: c.count,
-        orderId: orderRef.id,
       });
 
       c.items.forEach(({ p, q }) => c.change(p.id, -q));
       setCheckoutOpen(false);
       c.setOpen(false);
 
-      if (instaResult && instaResult.tracking_number) {
+      if (trackingNumber) {
         alert(
-          `Order placed! Tracking: ${instaResult.tracking_number}. We will contact you soon.`,
+          `Order placed! Courier Tracking: ${trackingNumber}. We will contact you soon.`,
         );
       } else {
         alert(

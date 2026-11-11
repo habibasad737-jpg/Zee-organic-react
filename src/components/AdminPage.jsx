@@ -3,6 +3,7 @@ import { sendEmailVerification, signOut } from "firebase/auth";
 import {
   collection,
   doc,
+  getDocsFromServer,
   onSnapshot,
   updateDoc,
 } from "firebase/firestore";
@@ -51,7 +52,7 @@ const orderAddress = (address) =>
 
 const firebaseError = (error) => {
   if (error?.code === "permission-denied") {
-    return "Firebase denied access. Add the admin and customer order rules described in README.md.";
+    return "Firestore denied access. Confirm that database/firestore.rules is deployed with `firebase deploy --only firestore:rules` and that you signed in with the verified administrator account.";
   }
   return error?.message || "Something went wrong. Please try again.";
 };
@@ -71,6 +72,34 @@ export default function AdminPage() {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [busyOrderId, setBusyOrderId] = useState("");
   const [busyAction, setBusyAction] = useState(false);
+
+  const loadOrders = async () => {
+    setOrdersLoading(true);
+    setError("");
+    try {
+      const snapshot = await getDocsFromServer(collection(db, "orders"));
+      const list = snapshot.docs.map((orderDoc) => ({
+        id: orderDoc.id,
+        ...orderDoc.data(),
+      }));
+      list.sort(
+        (first, second) =>
+          (second.createdAt?.toMillis?.() ?? 0) -
+          (first.createdAt?.toMillis?.() ?? 0),
+      );
+      setOrders(list);
+      setSelectedOrder((current) =>
+        current
+          ? list.find((order) => order.id === current.id) || current
+          : current,
+      );
+    } catch (loadError) {
+      console.error("Unable to refresh admin orders.", loadError);
+      setError(firebaseError(loadError));
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAdmin || !user?.emailVerified) return;
