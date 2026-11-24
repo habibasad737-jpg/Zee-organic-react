@@ -205,7 +205,7 @@ nav.d a:hover {
   padding: 12px 24px;
   text-decoration: none;
   border: 1px solid var(--forest);
-  background: linear-gradient(135deg, var(--forest), #2d7a4b 60%, var(--olive));
+  background: var(--forest);
   color: var(--onforest);
   transition:
     transform 0.2s,
@@ -213,6 +213,7 @@ nav.d a:hover {
   box-shadow: 0 10px 20px rgba(27, 90, 54, 0.18);
 }
 .btn:hover {
+  filter: brightness(0.92);
   transform: translateY(-1px);
   box-shadow: 0 14px 24px rgba(27, 90, 54, 0.22);
 }
@@ -228,14 +229,14 @@ nav.d a:hover {
   color: var(--forest);
 }
 .btn.account-cancel-order {
-  border-color: #b42318;
-  background: #b42318;
-  color: #fff;
-  box-shadow: 0 8px 18px rgba(180, 35, 24, 0.2);
+  border-color: var(--forest);
+  background: var(--forest);
+  color: var(--onforest);
+  box-shadow: 0 8px 18px rgba(27, 90, 54, 0.18);
 }
 .btn.account-cancel-order:hover {
-  border-color: #912018;
-  background: #912018;
+  border-color: var(--forest);
+  background: var(--forest);
 }
 .account-order-actions {
   display: flex;
@@ -647,13 +648,13 @@ h2 {
   color: #1a2118;
 }
 .nl .btn {
-  background: #d9f2a7;
-  border-color: #d9f2a7;
-  color: #1a3a20;
+  background: var(--onforest);
+  border-color: var(--onforest);
+  color: var(--forest);
 }
 .nl .btn:hover {
-  background: #eaf9ba;
-  color: #1a3a20;
+  background: var(--cream);
+  color: var(--forest);
 }
 #msg {
   color: #f8f7ee !important;
@@ -1768,11 +1769,11 @@ footer small {
   border-top: 1px solid var(--sand);
   border-radius: 0 0 12px 12px;
   padding-top: 12px;
-  color: #8b4038;
+  color: var(--forest);
 }
 .account-menu button.account-menu-logout > span {
-  background: #fbefed;
-  color: #8b4038;
+  background: var(--tint);
+  color: var(--forest);
 }
 .account-menu button:disabled {
   cursor: wait;
@@ -2255,13 +2256,13 @@ footer small {
 
 .admin-shell,
 .admin-gate {
-  --admin-ink: #17233a;
+  --admin-ink: var(--ink);
   --admin-muted: #748096;
-  --admin-line: #e7ebf2;
-  --admin-primary: #3979dc;
+  --admin-line: var(--sand);
+  --admin-primary: var(--forest);
   min-height: 100vh;
   color: var(--admin-ink);
-  background: #f5f7fb;
+  background: var(--cream);
   font-family: Inter, "Segoe UI", Arial, sans-serif;
 }
 .admin-shell {
@@ -2343,7 +2344,7 @@ footer small {
 }
 .admin-nav-item.active,
 .admin-nav-item:hover {
-  background: #edf4ff;
+  background: var(--tint);
   color: var(--admin-primary);
 }
 .admin-nav-item.active > span,
@@ -2389,7 +2390,7 @@ footer small {
   flex: 0 0 34px;
   place-items: center;
   border-radius: 50%;
-  background: #e6f0ff;
+  background: var(--tint);
   color: var(--admin-primary);
   font-weight: 800;
 }
@@ -2442,7 +2443,7 @@ footer small {
 }
 .admin-refresh-button:hover,
 .admin-link-button:hover {
-  border-color: #b7cff5;
+  border-color: var(--olive);
   color: var(--admin-primary);
 }
 .admin-refresh-button:disabled,
@@ -2494,7 +2495,7 @@ footer small {
 }
 .admin-primary-button:hover {
   transform: translateY(-1px);
-  background: #2869cb;
+  filter: brightness(0.92);
 }
 .admin-primary-button:disabled {
   cursor: wait;
@@ -2522,8 +2523,8 @@ footer small {
   height: 30px;
   place-items: center;
   border-radius: 9px;
-  background: #edf4ff;
-  color: #3979dc;
+  background: var(--tint);
+  color: var(--forest);
   font-size: 15px;
 }
 .admin-stat-icon.amber { background: #fff6e5; color: #d78a00; }
@@ -2659,7 +2660,7 @@ footer small {
 }
 .admin-row-action:hover,
 .admin-close-button:hover {
-  border-color: #b7cff5;
+  border-color: var(--olive);
   color: var(--admin-primary);
 }
 .admin-order-filters {
@@ -3113,7 +3114,7 @@ footer small {
   color: #bf453b;
 }
 .admin-product-meta > span.admin-product-badge {
-  background: #edf4ff;
+  background: var(--tint);
   color: var(--admin-primary);
 }
 .admin-product-actions {
@@ -3132,13 +3133,13 @@ footer small {
   font-weight: 750;
 }
 .admin-product-actions button:hover {
-  background: #edf4ff;
+  background: var(--tint);
 }
 .admin-product-actions button.danger {
-  color: #bf453b;
+  color: var(--forest);
 }
 .admin-product-actions button.danger:hover {
-  background: #fff0ef;
+  background: var(--tint);
 }
 .admin-product-actions button:disabled {
   cursor: wait;
@@ -3454,5 +3455,249 @@ footer small {
     align-items: stretch;
     flex-direction: column;
     padding: 15px 16px;
+  }
+}
+
+.testimonials {
+  position: relative;
+  isolation: isolate;
+  margin: 24px calc((100% - 100vw) / 2);
+  padding: clamp(36px, 6vw, 64px) 16px;
+  background: var(--tint2);
+  color: var(--ink);
+}
+.testimonials-inner {
+  width: min(100%, 1120px);
+  margin-inline: auto;
+}
+.testimonial-stats {
+  border: 1px solid var(--forest);
+  border-radius: 12px;
+  padding: 28px 20px 20px;
+  background: linear-gradient(145deg, var(--forest), var(--olive));
+  text-align: center;
+}
+.testimonial-stats h2,
+.testimonial-heading h2 {
+  color: var(--forest);
+  font-family: inherit;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 750;
+}
+.testimonial-stats > p,
+.testimonial-heading > p {
+  max-width: 540px;
+  margin: 6px auto 0;
+  color: var(--ink);
+  opacity: 0.76;
+  font-size: 13px;
+}
+.testimonial-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 560px;
+  margin: 24px auto 13px;
+  border-top: 1px solid rgb(255 255 255 / 28%);
+  padding-top: 18px;
+}
+.testimonial-stat-grid > div {
+  display: grid;
+  gap: 2px;
+}
+.testimonial-stat-grid strong {
+  color: var(--onforest);
+  font-size: clamp(22px, 3vw, 30px);
+  line-height: 1.15;
+}
+.testimonial-stat-grid span,
+.testimonial-stats > small {
+  color: var(--onforest);
+  opacity: 0.82;
+  font-size: 11px;
+}
+.testimonial-stats > small {
+  display: block;
+}
+.testimonial-heading {
+  margin: 42px auto 24px;
+  text-align: center;
+}
+.testimonial-heading h2 {
+  font-size: 24px;
+}
+.testimonial-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.testimonial-filters,
+.testimonial-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.testimonial-filters {
+  border: 1px solid var(--sand);
+  border-radius: 8px;
+  padding: 4px;
+}
+.testimonial-filters button,
+.testimonial-actions button,
+.testimonial-actions a {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--forest);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.testimonial-filters button.active,
+.testimonial-actions a {
+  background: var(--forest);
+  color: var(--onforest);
+}
+.testimonial-filters button:hover,
+.testimonial-actions button:hover {
+  border-color: var(--olive);
+  background: var(--tint);
+  color: var(--forest);
+}
+.testimonial-actions a:hover {
+  filter: brightness(0.92);
+}
+.testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 16px;
+}
+.testimonial-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--sand);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--card);
+}
+.testimonial-card > p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.testimonial-reviewer {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--sand);
+  padding-top: 14px;
+}
+.testimonial-reviewer > div {
+  display: grid;
+  gap: 3px;
+}
+.testimonial-reviewer strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+.testimonial-reviewer small {
+  color: var(--forest);
+  font-size: 10px;
+}
+.testimonial-reviewer > span {
+  flex: 0 0 auto;
+  color: var(--forest);
+  font-size: 12px;
+  font-weight: 750;
+}
+.testimonial-see-all {
+  display: table;
+  margin: 24px auto 0;
+  border-radius: 999px;
+  padding: 9px 18px;
+  background: var(--forest);
+  color: var(--onforest);
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: none;
+}
+.testimonial-see-all:hover {
+  filter: brightness(0.92);
+}
+.daraz-callout {
+  margin-top: 38px;
+  border-radius: 12px;
+  padding: 28px 20px;
+  background: var(--tint);
+  color: var(--ink);
+  text-align: center;
+}
+.daraz-callout h2 {
+  color: var(--forest);
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 800;
+}
+.daraz-callout p {
+  margin: 6px auto 14px;
+  color: var(--ink);
+  opacity: 0.78;
+  font-size: 12px;
+}
+.daraz-callout a {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--forest);
+  border-radius: 7px;
+  padding: 0 16px;
+  background: var(--forest);
+  color: var(--onforest);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.daraz-callout a:hover {
+  filter: brightness(0.92);
+}
+@media (max-width: 767px) {
+  .testimonial-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .testimonial-actions {
+    justify-content: space-between;
+  }
+  .testimonial-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .testimonial-card {
+    padding: 16px;
+  }
+}
+@media (max-width: 520px) {
+  .testimonial-grid {
+    grid-template-columns: 1fr;
+  }
+  .testimonial-card > p {
+    font-size: 14px;
   }
 }

@@ -16,10 +16,8 @@ export const brand = {
 
 export const money = (n) => brand.currency + Number(n || 0).toLocaleString();
 
-// --- INSTA WORLD COURIER CONFIG - FIXED FOR HOSTINGER ---
+// --- INSTA WORLD COURIER ---
+// The API key is NOT here: it lives on the server in public/ship-config.php.
 export const instaWorld = {
-  apiKey: import.meta.env.VITE_INSTA_WORLD_API_KEY || import.meta.env.VITE_INSTA_API_KEY || "2u0q86hz04l55yrz81xy",
-  locationId: 17107,
   apiUrl: "https://zeeorganicstore.com/ship.php",
-  merchantName: "RH products"
 };

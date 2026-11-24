@@ -12,7 +12,13 @@ import ShopPage from "./components/ShopPage.jsx";
 import ProductPage from "./components/ProductPage.jsx";
 import AccountPage from "./components/AccountPage.jsx";
 import AdminPage from "./components/AdminPage.jsx";
-import { Hero, Categories, Story, Why } from "./components/Sections.jsx";
+import {
+  Hero,
+  Categories,
+  Story,
+  Why,
+  Testimonials,
+} from "./components/Sections.jsx";
 export default function App() {
   return (
     <AuthProvider>
@@ -68,6 +74,7 @@ function StoreRoutes() {
               <BestSellers q={q} setQ={setQ} />
               <Story />
               <Why />
+              <Testimonials />
               <Newsletter />
             </div>
           </main>

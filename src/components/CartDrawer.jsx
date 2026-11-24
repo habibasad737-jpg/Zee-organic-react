@@ -29,12 +29,9 @@ async function createInstaWorldParcel(orderData) {
       order_id: orderData.orderId,
       items: orderData.items || [],
       pieces: orderData.count?.toString() || "1",
-      apiKey: instaWorld.apiKey,
     };
 
-    console.log("Sending to InstaWorld proxy:", payload);
-
-    const res = await fetch(instaWorld.apiUrl || '/api/create-shipment', {
+    const res = await fetch(instaWorld.apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -46,7 +43,7 @@ async function createInstaWorldParcel(orderData) {
 
   } catch (err) {
     console.error("Insta World Error:", err);
-    return null;
+    return { success: false, error: "network_error", message: err.message };
   }
 }
 
@@ -191,6 +188,9 @@ export default function CartDrawer() {
         count: c.count,
         status: "pending",
         instaTracking: trackingNumber,
+        instaError: trackingNumber
+          ? null
+          : `${instaResult?.error || "unknown_error"}: ${instaResult?.message || ""}`.slice(0, 300),
         createdAt: serverTimestamp(),
       });
 
