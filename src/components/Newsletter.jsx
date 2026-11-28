@@ -6,7 +6,7 @@ export default function Newsletter() {
     e.preventDefault();
     setMsg(
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-        ? "Thanks! This is a demo, so no email was sent. Newsletter API placeholder."
+        ? "Thanks for subscribing! We'll keep you posted on new products and offers."
         : "Enter a valid email address, like name@example.com.",
     );
   };

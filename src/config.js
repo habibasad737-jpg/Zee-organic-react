@@ -3,15 +3,15 @@ export const brand = {
   name: "Zee Organic Store",
   tagline: "Live Organic, Love Organic",
   currency: "PKR ",
-  shippingFee: 79,
+  shippingFee: 250,
   disclaimer:
-    "Product information is provided for general informational purposes and is not intended as medical advice.",
-  contact: [
-    "Address placeholder",
-    "+00 000 000 0000",
-    "hello@example.com",
-    "Mon-Sat, 9:00-19:00",
-  ],
+    "Our herbal, honey, seed, and organic food products are natural agricultural goods and are not intended to diagnose, treat, cure, or prevent any medical condition.",
+  business: {
+    address:
+      "Room # 1, Tayyab Urdgan Hostel, Meer hassan Street, Near Comsats University, Abbottabad, Khyber Pakhtunkhwa, Pakistan",
+    whatsapp: "03390662021",
+    email: "organicstorezee@gmail.com",
+  },
 };
 
 export const money = (n) => brand.currency + Number(n || 0).toLocaleString();

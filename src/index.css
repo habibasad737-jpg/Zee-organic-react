@@ -2,33 +2,8 @@
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  --forest: #1b5a36;
-  --olive: #5e9b4c;
-  --lime: #bfe08b;
-  --cream: #f5f7f1;
-  --sand: #dfead7;
-  --ink: #1b2d23;
-  --card: #ffffff;
-  --tint: #edf8ea;
-  --tint2: #f5faf2;
-  --onforest: #f6faf3;
-  --section-space: clamp(32px, 4vw, 52px);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --forest: #6ab461;
-    --olive: #89d177;
-    --lime: #daf3ac;
-    --cream: #101c12;
-    --sand: #213126;
-    --ink: #edf4eb;
-    --card: #17251a;
-    --tint: #172b1a;
-    --tint2: #152317;
-    --onforest: #edf4eb;
-  }
-}
-:root[data-theme="dark"] {
+  /* Dark theme only, for every visitor */
+  color-scheme: dark;
   --forest: #6ab461;
   --olive: #89d177;
   --lime: #daf3ac;
@@ -39,6 +14,7 @@
   --tint: #172b1a;
   --tint2: #152317;
   --onforest: #edf4eb;
+  --section-space: clamp(32px, 4vw, 52px);
 }
 html {
   overflow-x: clip;
@@ -706,6 +682,66 @@ footer small {
   display: block;
   opacity: 0.7;
   font-size: 12px;
+}
+footer a {
+  color: #e6eed4;
+}
+footer a:hover {
+  color: var(--lime);
+}
+.footer-contact p {
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+.footer-contact span {
+  opacity: 0.75;
+}
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.policy-page {
+  max-width: 820px;
+  padding-block: var(--section-space);
+  line-height: 1.65;
+}
+.policy-page h1 {
+  margin: 0 0 8px;
+  color: var(--forest);
+}
+.policy-date {
+  opacity: 0.75;
+  margin-top: 0;
+}
+.policy-page ul {
+  padding-left: 20px;
+}
+.policy-page li {
+  margin-bottom: 12px;
+}
+.policy-contact {
+  background: var(--tint);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 24px;
+}
+.policy-contact h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.policy-contact p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.policy-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 24px;
+}
+.policy-nav a {
+  color: var(--forest);
 }
 .cr {
   background: #123a1f;

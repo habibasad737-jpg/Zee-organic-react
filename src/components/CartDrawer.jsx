@@ -8,39 +8,34 @@ import {
   saveDeliveryInfo,
 } from "../accountProfile.js";
 import { db } from "../firebase.js";
-import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { pakistanLocations } from "../data/pakistanLocations.js";
+import { instaCities } from "../data/instaCities.js";
+
+// Match what the customer typed to InstaWorld's exact city name (case-insensitive).
+const findInstaCity = (value) => {
+  const v = String(value || "").trim().toUpperCase();
+  return v ? instaCities.find((c) => c.toUpperCase() === v) || "" : "";
+};
 
 // --- INSTA WORLD FUNCTION ---
-async function createInstaWorldParcel(orderData) {
+// Sends only the order id and the customer's sign-in token. The server reads the
+// saved order from Firestore and re-checks prices before booking the courier.
+async function createInstaWorldParcel(user, orderId) {
   try {
-    const addressStr = typeof orderData.address === "string"
-      ? orderData.address
-      : [orderData.address?.building, orderData.address?.area, orderData.address?.locality, orderData.address?.city, orderData.address?.province].filter(Boolean).join(", ");
-
-    const payload = {
-      customer_name: orderData.customerName || orderData.name,
-      customer_phone: orderData.phone,
-      customer_email: orderData.email || "",
-      customer_address: addressStr,
-      customer_city: orderData.city || orderData.address?.city,
-      customer_province: orderData.province || orderData.address?.province,
-      cod_amount: orderData.total,
-      order_id: orderData.orderId,
-      items: orderData.items || [],
-      pieces: orderData.count?.toString() || "1",
-    };
-
+    const idToken = await user.getIdToken();
     const res = await fetch(instaWorld.apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order_id: orderId, id_token: idToken }),
     });
-
-    const result = await res.json();
-    console.log("Insta World Response:", result);
-    return result;
-
+    return await res.json();
   } catch (err) {
     console.error("Insta World Error:", err);
     return { success: false, error: "network_error", message: err.message };
@@ -124,6 +119,14 @@ export default function CartDrawer() {
       setCheckoutError("Complete all required delivery details to continue.");
       return;
     }
+    const instaCity = findInstaCity(orderDeliveryInfo.city);
+    if (!instaCity) {
+      setCheckoutError(
+        `We can't deliver to "${orderDeliveryInfo.city}". Please choose your city from the list (start typing to search).`,
+      );
+      return;
+    }
+    orderDeliveryInfo.city = instaCity;
 
     setSubmitting(true);
     setCheckoutError("");
@@ -139,18 +142,9 @@ export default function CartDrawer() {
         profileSaveFailed = true;
       }
 
-      // 1. Prepare Order and Send to InstaWorld Courier
+      // 1. Save the order to Firestore first, so a shipment never exists without an order.
       const newOrderRef = doc(collection(db, "orders"));
       const orderId = newOrderRef.id;
-
-      const fullAddressString = [
-        orderDeliveryInfo.building,
-        orderDeliveryInfo.area,
-        orderDeliveryInfo.locality,
-        orderDeliveryInfo.address,
-        orderDeliveryInfo.city,
-        orderDeliveryInfo.province,
-      ].filter(Boolean).join(", ");
 
       const orderItems = c.items.map(({ p, q }) => ({
         id: p.id,
@@ -159,22 +153,6 @@ export default function CartDrawer() {
         qty: q,
       }));
 
-      const instaResult = await createInstaWorldParcel({
-        orderId,
-        customerName: orderDeliveryInfo.fullName,
-        phone: orderDeliveryInfo.phone,
-        email: user.email || "",
-        address: fullAddressString,
-        city: orderDeliveryInfo.city,
-        province: orderDeliveryInfo.province,
-        items: orderItems,
-        total: c.total,
-        count: c.count,
-      });
-
-      const trackingNumber = instaResult?.tracking_number || null;
-
-      // 2. Save Order to Firestore (with InstaWorld tracking if available)
       await setDoc(newOrderRef, {
         userId: user.uid,
         email: user.email || "",
@@ -187,14 +165,27 @@ export default function CartDrawer() {
         total: c.total,
         count: c.count,
         status: "pending",
-        instaTracking: trackingNumber,
-        instaError: trackingNumber
-          ? null
-          : `${instaResult?.error || "unknown_error"}: ${instaResult?.message || ""}`.slice(0, 300),
+        instaTracking: null,
+        instaError: null,
         createdAt: serverTimestamp(),
       });
 
       c.items.forEach(({ p, q }) => c.change(p.id, -q));
+
+      // 2. Ask the server to book the InstaWorld courier for this saved order.
+      const instaResult = await createInstaWorldParcel(user, orderId);
+      const trackingNumber = instaResult?.tracking_number || null;
+      try {
+        await updateDoc(newOrderRef, {
+          instaTracking: trackingNumber,
+          instaError: trackingNumber
+            ? null
+            : `${instaResult?.error || "unknown_error"}: ${instaResult?.message || ""}`.slice(0, 500),
+        });
+      } catch (trackingError) {
+        // The order is saved; the admin can still add tracking by hand.
+        console.error("Unable to save the courier result on the order.", trackingError);
+      }
       setCheckoutOpen(false);
       c.setOpen(false);
 
@@ -212,18 +203,12 @@ export default function CartDrawer() {
     } catch (error) {
       console.error("Unable to place the order.", error);
       setCheckoutError(
-        error?.code === "permission-denied"
-          ? "Firebase blocked this order. Deploy the Firestore rules with `firebase deploy --only firestore:rules`, then try again."
-          : error.message || "Unable to place the order. Please try again.",
+        "Unable to place the order. Please try again, or contact us on WhatsApp.",
       );
     } finally {
       setSubmitting(false);
     }
   };
-
-  const cities = deliveryInfo?.province
-    ? (pakistanLocations[deliveryInfo.province] ?? [])
-    : [];
 
   return (
     <>
@@ -361,10 +346,9 @@ export default function CartDrawer() {
                   <select
                     required
                     value={deliveryInfo.province}
-                    onChange={(event) => {
-                      updateDeliveryField("province", event.target.value);
-                      updateDeliveryField("city", "");
-                    }}
+                    onChange={(event) =>
+                      updateDeliveryField("province", event.target.value)
+                    }
                   >
                     <option value="">Choose a province</option>
                     {Object.keys(pakistanLocations).map((province) => (
@@ -375,22 +359,26 @@ export default function CartDrawer() {
                   </select>
                 </label>
                 <label>
-                  City *
-                  <select
+                  City * (type to search)
+                  <input
                     required
-                    disabled={!deliveryInfo.province}
+                    list="insta-city-list"
+                    autoComplete="off"
+                    placeholder="e.g. MARDAN"
                     value={deliveryInfo.city}
                     onChange={(event) =>
                       updateDeliveryField("city", event.target.value)
                     }
-                  >
-                    <option value="">Choose a city</option>
-                    {cities.map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
+                    onBlur={(event) => {
+                      const match = findInstaCity(event.target.value);
+                      if (match) updateDeliveryField("city", match);
+                    }}
+                  />
+                  <datalist id="insta-city-list">
+                    {instaCities.map((city) => (
+                      <option key={city} value={city} />
                     ))}
-                  </select>
+                  </datalist>
                 </label>
                 <label>
                   House / street *

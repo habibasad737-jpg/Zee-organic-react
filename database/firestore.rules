@@ -8,8 +8,23 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
+      // New orders must start as "pending" with no courier tracking,
+      // so nobody can create a fake "delivered" order to unlock reviews.
       allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          "userId", "email", "customerName", "phone", "address", "items",
+          "subtotal", "shipping", "total", "count", "status",
+          "instaTracking", "instaError", "createdAt"
+        ])
+        && request.resource.data.status == "pending"
+        && request.resource.data.get("instaTracking", null) == null
+        && request.resource.data.get("instaError", null) == null
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.items.size() <= 50
+        && request.resource.data.total is number
+        && request.resource.data.createdAt == request.time;
       allow read: if request.auth != null
         && (resource.data.userId == request.auth.uid
           || (request.auth.token.email == "khansher7377@gmail.com"
@@ -29,6 +44,17 @@ service cloud.firestore {
               || (resource.data.status == "delivered"
                 && request.resource.data.status == "returned")
             ))
+          // Right after checkout the customer saves the courier result once.
+          || (resource.data.userId == request.auth.uid
+            && resource.data.status == "pending"
+            && resource.data.get("instaTracking", null) == null
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(["instaTracking", "instaError"])
+            && (request.resource.data.instaTracking == null
+              || request.resource.data.instaTracking is string)
+            && (request.resource.data.instaError == null
+              || (request.resource.data.instaError is string
+                && request.resource.data.instaError.size() <= 500)))
         );
       allow delete: if false;
     }

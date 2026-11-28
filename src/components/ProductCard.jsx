@@ -20,7 +20,7 @@ export default function ProductCard({ p }) {
         <p className="d">{p.d}</p>
       </a>
       <p className="d rating">
-        ★ {p.r} <span>({p.v} reviews, demo)</span>
+        ★ {p.r} <span>({p.v} reviews)</span>
       </p>
       <div className="card-purchase">
         <div className="row">

@@ -12,6 +12,7 @@ import ShopPage from "./components/ShopPage.jsx";
 import ProductPage from "./components/ProductPage.jsx";
 import AccountPage from "./components/AccountPage.jsx";
 import AdminPage from "./components/AdminPage.jsx";
+import PolicyPage, { isPolicyPath } from "./components/PolicyPage.jsx";
 import {
   Hero,
   Categories,
@@ -56,6 +57,8 @@ function StoreRoutes() {
           <ShopPage />
         ) : isAccountPage ? (
           <AccountPage />
+        ) : isPolicyPath(path) ? (
+          <PolicyPage path={path} />
         ) : path.startsWith("/product/") ? (
           <main className="product-not-found wrap">
             <h1>Product not found</h1>

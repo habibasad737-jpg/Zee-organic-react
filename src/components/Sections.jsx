@@ -88,7 +88,7 @@ export const Why = () => (
       {[
         ["✦", "Quality products", "Carefully selected"],
         ["🌿", "Natural ingredients", "Clear labelling"],
-        ["🔒", "Secure payments", "Gateway placeholder"],
+        ["🔒", "Secure payments", "Cash on Delivery"],
         ["🚚", "Reliable delivery", "Tracked shipping"],
         ["☺", "Customer care", "We're here to help"],
       ].map(([i, t, d]) => (
